@@ -33,7 +33,6 @@ dependencies = [
     "mujoco-mjx>=3.3.5",
     "mujoco>=3.3.5",
     "tqdm",
-    "warp-lang>=1.8.1",
 ]
 keywords = ["mjx", "mujoco", "sim2real", "reinforcement learning"]
 
