@@ -1,0 +1,332 @@
+<mujoco model="hector feet only">
+    <compiler angle="radian" meshdir="./meshes/" />
+
+    <option iterations="3" ls_iterations="5" timestep="0.002" integrator="Euler">
+        <flag eulerdamp="disable" />
+    </option>
+
+    <default>
+        <default class="humanoid">
+
+            <geom condim="1" contype="0" conaffinity="0" />
+            <site size="0.01" rgba="1 0 0 1" group="4" />
+            <joint axis="0 0 1" damping="1.5" />
+
+            <position inheritrange="1.0" kp="35" />
+            <default class="h_yaw">
+                <joint actuatorfrcrange="-33.5 33.5" range="-0.785398 0.785398" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+            </default>
+            <default class="h_roll">
+                <joint actuatorfrcrange="-33.5 33.5" range="-0.785398 0.785398" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+            </default>
+            <default class="h_pitch">
+                <joint actuatorfrcrange="-33.5 33.5" range="-3.14 3.14" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+            </default>
+            <default class="k_pitch">
+                <joint actuatorfrcrange="-67.0 67.0" range="-3.14 3.14" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+            </default>
+            <default class="ankle">
+                <joint actuatorfrcrange="-33.5 33.5" range="-1.4 1.4" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+            </default>
+
+            <default class="arm_yaw">
+                <joint actuatorfrcrange="-17 17" range="-1.4 1.4" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+                <position kp="5" />
+            </default>
+            <default class="arm_pitch">
+                <joint actuatorfrcrange="-17 17" range="-3.14 1.5708" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+                <position kp="5" />
+            </default>
+            <default class="arm_roll">
+                <joint actuatorfrcrange="-17 17" range="-1.4 1.4" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+                <position kp="5" />
+            </default>
+            <default class="arm_elbow">
+                <joint actuatorfrcrange="-17 17" range="-3.0 3.0" armature="0.005"
+                    frictionloss="0.05" damping="0.1" />
+                <position kp="5" />
+            </default>
+
+            <default class="imu">
+                <site type="box" size="0.01 0.008 0.0015" rgba="1 0 0 0" />
+            </default>
+
+            <default class="visual">
+                <geom type="mesh" density="0" group="2" material="metal" contype="0" conaffinity="0" />
+            </default>
+
+            <default class="collision">
+                
+                <geom group="3" />
+                <default class="foot1">
+                    <geom size="0.078 0.012 0.001" pos="0.008 0.0 -0.039" type="box" contype="1" conaffinity="1"/>
+                    <site size="0.078 0.012 0.001" pos="0.008 0.0 -0.039" type="box" />
+                </default>
+            </default>
+
+        </default>
+    </default>
+
+    <asset>
+        <material name="metal" rgba=".3 .3 .3 1" />
+
+        <mesh name="torso" file="torso.stl" />
+        <mesh name="l_hip1" file="l_hip1.stl" />
+        <mesh name="l_hip2" file="l_hip2.stl" />
+        <mesh name="l_thigh" file="l_thigh.stl" />
+        <mesh name="calf" file="calf.stl" />
+        <mesh name="foot" file="foot_original.stl" />
+        <mesh name="r_hip1" file="r_hip1.stl" />
+        <mesh name="r_hip2" file="r_hip2.stl" />
+        <mesh name="r_thigh" file="r_thigh.stl" />
+        <mesh name="r_shoulder1" file="r_shoulder1.stl" />
+        <mesh name="r_shoulder2" file="r_shoulder2.stl" />
+        <mesh name="r_upper_arm" file="r_upper_arm.stl" />
+        <mesh name="lower_arm" file="lower_arm.stl" />
+        <mesh name="l_shoulder1" file="l_shoulder1.stl" />
+        <mesh name="l_shoulder2" file="l_shoulder2.stl" />
+        <mesh name="l_upper_arm" file="l_upper_arm.stl" />
+    </asset>
+
+
+    <worldbody>
+        <body name="torso" pos="0 0 0.6">
+
+            <freejoint name="root" />
+            <site name="root" class="imu" />
+
+            <camera name="front" pos="1.210 -0.435 0.32" xyaxes="0.342 0.940 0.000 -0.321 0.117 0.940" mode="trackcom" />
+            <camera name="track" pos="0.805 -1.105 0.2" xyaxes="0.814 0.580 0.000 -0.140 0.196 0.971" mode="trackcom" />
+
+            <inertial pos="0.0 0.0 0.0" mass="4.98"
+                fullinertia="0.048637  0.04267 0.023157 0.000154 0.000534 0.0" />
+            <geom class="visual" mesh="torso" material="metal" />
+
+            <body name="l_hip1" pos="0 0.047 -0.1265">
+                <joint name="l_hip_yaw" pos="0 0 0" axis="0 0 1" class="h_yaw" />
+
+                <inertial pos="0.05147 0.01453 -0.06160" mass="0.77833"
+                    diaginertia="0.00122 0.00111 0.00081" />
+                <geom class="visual" mesh="l_hip1" material="metal" />
+
+                <body name="l_hip2" pos="0.0465 0.015 -0.0705">
+
+                    <joint name="l_hip_roll" pos="0 0 0" axis="1 0 0" class="h_roll" />
+
+                    <inertial pos="-0.05690 -0.00009 0.00023" mass="0.67724"
+                        diaginertia="0.00053 0.00087 0.00061" />
+                    <geom class="visual" mesh="l_hip2" material="metal" />
+
+                    <body name="l_thigh" pos="-0.06 0.018 0">
+
+                        <joint name="l_hip_pitch" pos="0 0 0" axis="0 1 0" class="h_pitch" />
+
+                        <inertial pos="0 0.0495479 -0.0538811"
+                            quat="0.706819 -0.0201552 0.0201552 0.706819" mass="1.558"
+                            diaginertia="0.00641282 0.00621905 0.00163248" />
+                        <geom class="visual" mesh="l_thigh" material="metal" />
+
+                        <body name="l_calf" pos="0 0.0142 -0.22">
+
+                            <joint name="l_knee" pos="0 0 0" axis="0 1 0" class="k_pitch" />
+
+                            <inertial pos="0.00204 0 -0.077" quat="0.707107 0 0 0.707107"
+                                mass="0.146" diaginertia="0.00075 0.00074 2e-05" />
+                            <geom class="visual" mesh="calf" material="metal" />
+
+                            <body name="l_toe" pos="0 0 -0.22">
+
+                                <joint name="l_ankle" pos="0 0 0" axis="0 1 0" class="ankle" />
+                                <inertial pos="0.00246 0.00003 -0.02248" mass="0.08440"
+                                    diaginertia="0.00001 0.00011 0.00010" />
+                                <geom class="visual" mesh="foot" material="metal" />
+
+                                <geom name="l_toe_contact" class="foot1"/>
+                                <site name="l_toe" class="imu" />
+
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+
+            <body name="r_hip1" pos="0 -0.047 -0.1265">
+
+                <joint name="r_hip_yaw" pos="0 0 0" axis="0 0 1" limited="true" class="h_yaw"/>
+                <inertial pos="0.05147 -0.01453 -0.06160" mass="0.77833"
+                    diaginertia="0.00122 0.00111 0.00081" />
+                <geom class="visual" mesh="r_hip1" material="metal" />
+
+                <body name="r_hip2" pos="0.0465 -0.015 -0.0705">
+
+                    <joint name="r_hip_roll" pos="0 0 0" axis="1 0 0" class="h_roll"/>
+                    <inertial pos="-0.05690 0.00009 0.00023" mass="0.67724"
+                        diaginertia="0.00053 0.00087 0.00061" />
+                    <geom class="visual" mesh="r_hip2" material="metal" />
+
+                    <body name="r_thigh" pos="-0.06 -0.018 0">
+
+                        <joint name="r_hip_pitch" pos="0 0 0" axis="0 1 0" class="h_pitch" />
+                        <inertial pos="0 -0.0495479 -0.0534307"
+                            quat="0.706808 0.0205429 -0.0205429 0.706808" mass="1.558"
+                            diaginertia="0.0064221 0.00622769 0.00163184" />
+                        <geom class="visual" mesh="r_thigh" material="metal" />
+
+                        <body name="r_calf" pos="0 -0.0142 -0.22">
+
+                            <joint name="r_knee" pos="0 0 0" axis="0 1 0" class="k_pitch" />
+                            <inertial pos="0.00204 0 -0.077" quat="0.707107 0 0 0.707107"
+                                mass="0.146" diaginertia="0.00075 0.00074 2e-05" />
+                            <geom class="visual" mesh="calf" material="metal" />
+
+                            <body name="r_toe" pos="0 0 -0.22">
+                                <joint name="r_ankle" pos="0 0 0" axis="0 1 0" class="ankle" />
+                                <inertial pos="0.00246 -0.00003 -0.02248" mass="0.08440"
+                                    diaginertia="0.00001 0.00011 0.00010" />
+                                <geom class="visual" mesh="foot" material="metal" />
+
+                                <geom name="r_toe_contact" class="foot1"/>
+                                <site name="r_toe" class="imu" />
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+
+
+            <body name="l_shoudler1" pos="0 0.053 0.124">
+
+                <joint name="l_shoulder_yaw" pos="0 0 0" axis="0 0 1" class="arm_yaw" />
+                <inertial pos="0.00071 0.02838 0.04835" quat="0.707107 0 0 0.707107" mass="0.4356"
+                    diaginertia="0.00043 0.00035 0.00027" />
+                <geom class="visual" mesh="l_shoulder1" material="metal" />
+
+                <body name="l_shoulder2" pos="0 0.049 0.053">
+
+                    <joint name="l_shoulder_pitch" pos="0 0 0" axis="0 1 0" class="arm_pitch" />
+                    <inertial pos="-0.0294 0.04541 0.00089"
+                        quat="0.705607 0.705607 0.0460358 0.0460358" mass="0.432"
+                        diaginertia="0.000422621 0.00033 0.000267379" />
+                    <geom class="visual" mesh="l_shoulder2" material="metal" />
+
+                    <body name="l_upper_arm" pos="-0.011 0.0457 0">
+
+                        <joint name="l_shoulder_roll" pos="0 0 0" axis="-1 0 0" class="arm_roll" />
+                        <inertial pos="0.04492 0.01006 -0.03218"
+                            quat="0.67582 -0.0441467 0.0483102 0.734156" mass="0.66484"
+                            diaginertia="0.00329956 0.00317918 0.000441259" />
+                        <geom class="visual" mesh="l_upper_arm" material="metal" />
+
+                        <body name="l_lower_arm" pos="0.041 -0.007 -0.2">
+                            <joint name="l_elbow" pos="0 0 0" axis="0 1 0" class="arm_elbow" />
+                            <inertial pos="0 8e-05 -0.11722" quat="0.707107 0 0 0.707107"
+                                mass="0.1578" diaginertia="0.0013 0.00129 2e-05" />
+                            <geom class="visual" mesh="lower_arm" material="metal" />
+
+                            <site name="l_hand" pos="0 0 -0.22" quat="0 1 0 0" />
+                        </body>
+                    </body>
+                </body>
+            </body>
+
+
+            <body name="r_shoulder1" pos="0 -0.053 0.124">
+
+                <joint name="r_shoulder_yaw" pos="0 0 0" axis="0 0 1" class="arm_yaw" />
+                <inertial pos="0.00071 -0.02838 0.04835" quat="0.707107 0 0 0.707107" mass="0.4356"
+                    diaginertia="0.00043 0.00035 0.00027" />
+
+                <geom class="visual" mesh="r_shoulder1" material="metal" />
+
+                <body name="r_shoulder2" pos="0 -0.049 0.053">
+
+                    <joint name="r_shoulder_pitch" pos="0 0 0" axis="0 1 0" class="arm_pitch" />
+                    <inertial pos="-0.0294 -0.04541 0.00089"
+                        quat="0.705607 0.705607 -0.0460358 -0.0460358" mass="0.432"
+                        diaginertia="0.000422621 0.00033 0.000267379" />
+                    <geom class="visual" mesh="r_shoulder2" material="metal" />
+
+                    <body name="r_upper_arm" pos="-0.011 -0.0457 0">
+
+                        <joint name="r_shoulder_roll" pos="0 0 0" axis="-1 0 0" class="arm_roll" />
+                        <inertial pos="0.04492 -0.01006 -0.03218"
+                            quat="0.734156 0.0483102 -0.0441467 0.67582" mass="0.66484"
+                            diaginertia="0.00329956 0.00317918 0.000441259" />
+                        <geom class="visual" mesh="r_upper_arm" material="metal" />
+
+                        <body name="r_lower_arm" pos="0.041 0.007 -0.2">
+                            <inertial pos="0 8e-05 -0.11722" quat="0.707107 0 0 0.707107"
+                                mass="0.1578" diaginertia="0.0013 0.00129 2e-05" />
+                            <joint name="r_elbow" pos="0 0 0" axis="0 1 0" class="arm_elbow" />
+                            <geom class="visual" mesh="lower_arm" material="metal" />
+
+                            <site name="r_hand" pos="0 0 -0.22" quat="0 1 0 0" />
+                        </body>
+
+                    </body>
+                </body>
+            </body>
+
+
+        </body>
+    </worldbody>
+
+
+  <actuator>
+    <position class="h_yaw" name="l_hip_yaw" joint="l_hip_yaw"/>
+    <position class="h_roll" name="l_hip_roll" joint="l_hip_roll"/>
+    <position class="h_pitch" name="l_hip_pitch" joint="l_hip_pitch"/>
+    <position class="k_pitch" name="l_knee" joint="l_knee"/>
+    <position class="ankle" name="l_ankle" joint="l_ankle"/>
+
+    <position class="h_yaw" name="r_hip_yaw" joint="r_hip_yaw"/>
+    <position class="h_roll" name="r_hip_roll" joint="r_hip_roll"/>
+    <position class="h_pitch" name="r_hip_pitch" joint="r_hip_pitch"/>
+    <position class="k_pitch" name="r_knee" joint="r_knee"/>
+    <position class="ankle" name="r_ankle" joint="r_ankle"/>
+
+    <position class="arm_yaw" name="l_shoulder_yaw" joint="l_shoulder_yaw"/>
+    <position class="arm_pitch" name="l_shoulder_pitch" joint="l_shoulder_pitch"/>
+    <position class="arm_roll" name="l_shoulder_roll" joint="l_shoulder_roll"/>
+    <position class="arm_elbow" name="l_elbow" joint="l_elbow"/>
+
+    <position class="arm_yaw" name="r_shoulder_yaw" joint="r_shoulder_yaw"/>
+    <position class="arm_pitch" name="r_shoulder_pitch" joint="r_shoulder_pitch"/>
+    <position class="arm_roll" name="r_shoulder_roll" joint="r_shoulder_roll"/>
+    <position class="arm_elbow" name="r_elbow" joint="r_elbow"/>
+
+  </actuator>
+
+    <sensor>
+    <!-- added sensors for mujoco playground-->
+    <gyro site="root" name="gyro" />
+    <velocimeter site="root" name="local_linvel" />
+    <accelerometer site="root" name="accelerometer" />
+    <framezaxis objtype="site" objname="root" name="upvector" />
+    <framexaxis objtype="site" objname="root" name="forwardvector" />
+    <framelinvel objtype="site" objname="root" name="global_linvel" />
+    <frameangvel objtype="site" objname="root" name="global_angvel" />
+    <framepos objtype="site" objname="root" name="position" />
+    <framequat objtype="site" objname="root" name="orientation" />
+
+    <framelinvel objtype="site" objname="l_toe" name="l_toe_global_linvel" />
+    <framelinvel objtype="site" objname="r_toe" name="r_toe_global_linvel" />
+    <framexaxis objtype="site" objname="l_toe" name="l_toe_upvector" />
+    <framexaxis objtype="site" objname="r_toe" name="r_toe_upvector" />
+
+    <framepos objtype="site" objname="l_toe" name="l_toe_pos" />
+    <framepos objtype="site" objname="r_toe" name="r_toe_pos" />
+
+    <force name="left_foot_force" site="l_toe" />
+    <force name="right_foot_force" site="r_toe" />
+  </sensor>
+
+</mujoco>

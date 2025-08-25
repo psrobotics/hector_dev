@@ -1,0 +1,9 @@
+package exlcm;
+
+struct twist_t
+{
+    int64_t  timestamp;
+    double   x_vel[2];
+    double   y_vel[2];
+    double   omega_vel[2];
+}
