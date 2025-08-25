@@ -70,6 +70,7 @@ def default_config() -> config_dict.ConfigDict:
               feet_height=2.0,
               feet_slip=-0.5,#-0.15,
               undesired_contact=-3.0,
+              feet_upright=-0.5,
               # Other rewards.
               alive=0.5,
               termination=-1.0,
@@ -234,6 +235,7 @@ class WBC(hector_base.HectorEnv):
         'feet_air_time': self._reward_feet_air_time,
         'feet_slip': self._cost_feet_slip,
         'undesired_contact': self._cost_undesired_contact,
+        'feet_upright': self._cost_feet_upright,
         # Alive
         'alive': self._reward_alive,
         'termination': self._cost_termination,
@@ -645,6 +647,7 @@ class WBC(hector_base.HectorEnv):
       'torso_zaxis': self.get_gravity(data),
       'feet_air_time': info["feet_air_time"],
       'p_fz': info['feet_pos_z'],
+      'zaxis_fz': self.get_feet_zaxis(data),
       
     }
     rewards = {}
@@ -826,6 +829,13 @@ class WBC(hector_base.HectorEnv):
     cmd_norm = jp.linalg.norm(context['command'][0:3])
     rew_swing = rew_per_foot * jp.logical_not(context['contact']) * (cmd_norm>0.1)
     return jp.sum(rew_swing)
+  
+  def _cost_feet_upright(self, context: Dict[str, Any]) -> jax.Array:
+    z_fz = context['zaxis_fz']
+    c_l = jp.sum(jp.square(z_fz[0:2]))
+    c_r = jp.sum(jp.square(z_fz[3:5]))
+    return c_l+c_r
+    
   
   def _cost_stand_still(self, context: Dict[str, Any]) -> jax.Array:
     commands = context['command']

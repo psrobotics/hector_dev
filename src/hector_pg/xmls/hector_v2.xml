@@ -324,9 +324,13 @@
 
     <framepos objtype="site" objname="l_toe" name="l_toe_pos" />
     <framepos objtype="site" objname="r_toe" name="r_toe_pos" />
+    <framezaxis objtype="site" objname="l_toe" name="upvec_l_toe" />
+    <framezaxis objtype="site" objname="r_toe" name="upvec_r_toe" />
 
     <force name="left_foot_force" site="l_toe" />
     <force name="right_foot_force" site="r_toe" />
+
+
   </sensor>
 
 </mujoco>

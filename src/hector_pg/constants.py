@@ -31,15 +31,14 @@ FEET_SITES = [
 LEFT_FEET_GEOMS = [
     "l_toe_contact",
 ]
-
 RIGHT_FEET_GEOMS = [
     "r_toe_contact",
 ]
-
 FEET_GEOMS = LEFT_FEET_GEOMS + RIGHT_FEET_GEOMS
 
 # l_toe_pos and r_toe_pos
 FEET_POS_SENSOR = [f"{site}_pos" for site in FEET_SITES]
+FEET_ZAXIS = [f"upvec_{site}" for site in FEET_SITES]
 
 ROOT_BODY = "torso"
 
