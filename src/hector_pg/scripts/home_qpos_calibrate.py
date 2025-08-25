@@ -22,6 +22,7 @@ def visualize_home_pose(mjcf_path, key_name="home"):
         print(f"\nDisplaying pose from keyframe '{key_name}'.")
         print("Close the viewer window to exit.")
         with mujoco.viewer.launch_passive(model, data) as viewer:
+
             while viewer.is_running():
                 time.sleep(0.1)
 

@@ -85,7 +85,7 @@ class HectorEnv(mjx_env.MjxEnv):
     ])
     
   def get_feet_zaxis(self, data:mjx.Data) -> jax.Array:
-    """Return the z axis of the feet in the world frame."""
+    """Return 3D unit vector corresponding to the Z-axis of the spatial frame of the feet in the world frame."""
     return jp.vstack([
         mjx_env.get_sensor_data(self.mj_model, data, sensor_name)
         for sensor_name in consts.FEET_ZAXIS
