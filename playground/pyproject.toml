@@ -23,7 +23,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "brax>=0.12.5",
+    "brax>=0.12.1",
     "etils",
     "flax",
     "jax",
@@ -32,10 +32,8 @@ dependencies = [
     "ml_collections",
     "mujoco-mjx>=3.3.5",
     "mujoco>=3.3.5",
-    "orbax-checkpoint>=0.11.22",
     "tqdm",
     "warp-lang>=1.8.1",
-    "wandb",
 ]
 keywords = ["mjx", "mujoco", "sim2real", "reinforcement learning"]
 
