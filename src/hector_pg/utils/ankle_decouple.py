@@ -1,6 +1,13 @@
 import jax
 import jax.numpy as jp
 
+def act_fk()
+'''Couple act from motor(low-level) space to joint(policy) space'''
+
+
+def obs_ik()
+'''Decouple obs from joint(policy) space to motor(low-level) space'''
+
 # ref code
     def compute(
                 self, 
