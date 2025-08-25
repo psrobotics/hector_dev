@@ -56,8 +56,8 @@ def default_config() -> config_dict.ConfigDict:
               #tracking_arm=0.0,
               # Base related rewards.
               lin_vel_z=-0.1,
-              ang_vel_xy=-0.5,#-0.25,
-              orientation=2.0,
+              ang_vel_xy=-0.25,#-0.25,
+              orientation=1.0,
               # Energy related rewards.
               energy=-0.0, #-1e-4,
               smoothness=-0.0,
@@ -68,13 +68,13 @@ def default_config() -> config_dict.ConfigDict:
               #feet_phase=2.0,#2.0,
               feet_air_time=2.0,
               feet_height=2.0,
-              feet_slip=-0.5,#-0.15,
+              feet_slip=-0.15,#-0.15,
               undesired_contact=-3.0,
               feet_upright=-0.15,
               # Other rewards.
               alive=0.5,
               termination=-1.0,
-              stand_still=-0.0, # -1.0
+              stand_still=-1.0, # -1.0
               # Pose related rewards.
               #joint_deviation_knee=-0.0,
               joint_deviation_hip=-0.5,
@@ -84,7 +84,7 @@ def default_config() -> config_dict.ConfigDict:
           max_foot_height=0.10,
           max_contact_force=250.0,
           # Force threshold that holds as contact
-          feet_f_contact = 1.0,
+          feet_f_contact = 5.0,
           # Desired airtime within phase (1.0 scale)
           airtime = 0.45, #0.65
           # In what precentage control will be ruleout
@@ -170,8 +170,8 @@ class WBC(hector_base.HectorEnv):
 
     # fmt: off
     self._weights = jp.array([
-        1.0, 1.0, 0.01, 0.01, 0.05,  # left leg.
-        1.0, 1.0, 0.01, 0.01, 0.05,  # right leg. # 0.5
+        1.0, 1.0, 0.01, 0.01, 0.01,  # left leg.
+        1.0, 1.0, 0.01, 0.01, 0.01,  # right leg. # 0.5
         1.0, 1.0, 1.0, 1.0,   # left arm
         1.0, 1.0, 1.0, 1.0,   # right arm
     ])
