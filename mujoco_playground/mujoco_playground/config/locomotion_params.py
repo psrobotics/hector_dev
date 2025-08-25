@@ -156,6 +156,7 @@ def brax_ppo_config(env_name: str) -> config_dict.ConfigDict:
     rl_config.clipping_epsilon = 0.2
     rl_config.num_resets_per_eval = 1
     rl_config.entropy_cost = 0.005
+    rl_config.learning_rate=1.5e-4
     rl_config.network_factory = config_dict.create(
         policy_hidden_layer_sizes=(1024, 512, 256),
         value_hidden_layer_sizes=(1024, 512, 256),
