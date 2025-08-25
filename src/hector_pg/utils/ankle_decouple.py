@@ -1,64 +1,96 @@
 import jax
 import jax.numpy as jp
 
-def act_fk()
-'''Couple act from motor(low-level) space to joint(policy) space'''
+# Indices (2 legs × 5 joints) + 8 arm joints = 18 total
+HIP_IDX   = jp.array([0, 1, 2, 5, 6, 7])
+KNEE_IDX  = jp.array([3, 8])
+ANKLE_IDX = jp.array([4, 9])
+ARM_IDX   = jp.arange(10, 18)
+ARM_SPEC  = jp.array([13, 17])   # joints with extra gear_ratio_arm
+
+MOT_DIR = jp.array([1, 1, 1, 1, 1,
+                    1, 1, 1, 1, 1,
+                    1, 1, -1, 1,
+                    1, 1, -1, 1])
+GEAR_RATIO_KNEE = 2.0
+GEAR_RATIO_ARM = 1.417
+KNEE_OFFSET = -2.38
+
+def obs_ik_qdq(policy_q,
+               policy_dq,
+               joint_dir: jax.Array = MOT_DIR,
+               knee_offset: float = KNEE_OFFSET,
+               gear_ratio_knee: float = GEAR_RATIO_KNEE,
+               gear_ratio_arm: float = GEAR_RATIO_ARM,
+               )->jax.Array:
+    '''Decouple obs from joint(policy) space to motor(low-level) space'''
+    low_q  = jp.zeros_like(policy_q)
+    low_dq = jp.zeros_like(policy_dq)
+
+    # hips: direct sign
+    low_q  = low_q.at[HIP_IDX].set(joint_dir[HIP_IDX] * policy_q[HIP_IDX])
+    low_dq = low_dq.at[HIP_IDX].set(joint_dir[HIP_IDX] * policy_dq[HIP_IDX])
+
+    # knee: (q - off)*ratio + off, then sign
+    qd3 = policy_q[KNEE_IDX]; dd3 = policy_dq[KNEE_IDX]
+    q3_raw  = (qd3 - knee_offset) * gear_ratio_knee + knee_offset
+    dq3_raw = dd3 * gear_ratio_knee
+    low_q  = low_q.at[KNEE_IDX].set(joint_dir[KNEE_IDX] * q3_raw)
+    low_dq = low_dq.at[KNEE_IDX].set(joint_dir[KNEE_IDX] * dq3_raw)
+
+    # ankle: depends on knee
+    qd4 = policy_q[ANKLE_IDX]; dd4 = policy_dq[ANKLE_IDX]
+    q4_raw  = qd4 + qd3 - knee_offset
+    dq4_raw = dd4 + dd3
+    low_q  = low_q.at[ANKLE_IDX].set(joint_dir[ANKLE_IDX] * q4_raw)
+    low_dq = low_dq.at[ANKLE_IDX].set(joint_dir[ANKLE_IDX] * dq4_raw)
+
+    # arms: direct sign
+    low_q  = low_q.at[ARM_IDX].set(joint_dir[ARM_IDX] * policy_q[ARM_IDX])
+    low_dq = low_dq.at[ARM_IDX].set(joint_dir[ARM_IDX] * policy_dq[ARM_IDX])
+
+    # special arm joints: apply gear ratio
+    low_q  = low_q.at[ARM_SPEC].set(joint_dir[ARM_SPEC] * policy_q[ARM_SPEC] * gear_ratio_arm)
+    low_dq = low_dq.at[ARM_SPEC].set(joint_dir[ARM_SPEC] * policy_dq[ARM_SPEC] * gear_ratio_arm)
+
+    return jp.hstack([low_q, low_dq])
 
 
-def obs_ik()
-'''Decouple obs from joint(policy) space to motor(low-level) space'''
+def act_fk_qdq(low_q,
+               low_dq,
+               joint_dir: jax.Array = MOT_DIR,
+               knee_offset: float = KNEE_OFFSET,
+               gear_ratio_knee: float = GEAR_RATIO_KNEE,
+               gear_ratio_arm: float = GEAR_RATIO_ARM,
+               )->jax.Array:
+    '''Couple act from motor(low-level) space to joint(policy) space'''
+    # 1) undo sign to get motor coords (what IK used before sign)
+    m_q  = joint_dir * low_q
+    m_dq = joint_dir * low_dq
 
-# ref code
-    def compute(
-                self, 
-                control_action: ArticulationActions, 
-                joint_pos: torch.Tensor, 
-                joint_vel: torch.Tensor) -> ArticulationActions:
-        
-        # knee command with gear ratio 
+    policy_q  = jp.zeros_like(low_q)
+    policy_dq = jp.zeros_like(low_dq)
 
-        # assume the command is in motor space (policy pov) , now transform it to joint space (sim pov)
-        control_action.joint_positions[:,6] = control_action.joint_positions[:,6] / self.cfg.knee_gear_ratio
-        control_action.joint_positions[:,7] = control_action.joint_positions[:,7] / self.cfg.knee_gear_ratio
+    # hips: just sign-corrected values
+    policy_q  = policy_q.at[HIP_IDX].set(m_q[HIP_IDX])
+    policy_dq = policy_dq.at[HIP_IDX].set(m_dq[HIP_IDX])
 
-        control_action.joint_velocities[:,6] = control_action.joint_velocities[:,6] / self.cfg.knee_gear_ratio
-        control_action.joint_velocities[:,7] = control_action.joint_velocities[:,7] / self.cfg.knee_gear_ratio
+    # knee: invert offset+ratio
+    q3 = (m_q[KNEE_IDX] - knee_offset) / gear_ratio_knee + knee_offset
+    dq3 = m_dq[KNEE_IDX] / gear_ratio_knee
+    policy_q  = policy_q.at[KNEE_IDX].set(q3)
+    policy_dq = policy_dq.at[KNEE_IDX].set(dq3)
 
-        # knee-ankle coupling
+    # ankle: invert coupling with knee
+    policy_q  = policy_q.at[ANKLE_IDX].set(m_q[ANKLE_IDX] - q3 + knee_offset)
+    policy_dq = policy_dq.at[ANKLE_IDX].set(m_dq[ANKLE_IDX] - dq3)
 
-        # get the knee joint positions
-        q_j_knee_left = joint_pos[:,6]
-        q_j_knee_right = joint_pos[:,7]
-        qdot_j_knee_left = joint_vel[:,6]
-        qdot_j_knee_right = joint_vel[:,7]
+    # arms: sign-corrected
+    policy_q  = policy_q.at[ARM_IDX].set(m_q[ARM_IDX])
+    policy_dq = policy_dq.at[ARM_IDX].set(m_dq[ARM_IDX])
 
-        # clip the ankle commands to the joint limits, q_m_ankle = nominal: 25.0 deg, min: -8.5 deg, max: 81.0 deg
-        control_action.joint_positions[:,8] = torch.clip(control_action.joint_positions[:,8], min=-0.5846853, max= 0.977384)
-        control_action.joint_positions[:,9] = torch.clip(control_action.joint_positions[:,9], min=-0.5846853, max= 0.977384)
+    # special arm joints: divide the gear ratio
+    policy_q  = policy_q.at[ARM_SPEC].set(m_q[ARM_SPEC] / gear_ratio_arm)
+    policy_dq = policy_dq.at[ARM_SPEC].set(m_dq[ARM_SPEC] / gear_ratio_arm)
 
-        # assume the ankle command is in the motor space (coming from policy pov) , now transform it to joint space
-        
-        # for HECTOR_V1P5
-        q_j_ankle_left = control_action.joint_positions[:,8] - q_j_knee_left 
-        q_j_ankle_right = control_action.joint_positions[:,9] -q_j_knee_right
-        qdot_j_ankle_left = control_action.joint_velocities[:,8]  - qdot_j_knee_left
-        qdot_j_ankle_right = control_action.joint_velocities[:,9]  - qdot_j_knee_right
-        
-        # for HECTOR_V1P5_CI
-        # q_j_ankle_left = control_action.joint_positions[:,8] - (q_j_knee_left + 1.5708)
-        # q_j_ankle_right = control_action.joint_positions[:,9] -(q_j_knee_right + 1.5708)
-
-        # overwrite the commands to the joint space (simulation pov)
-        control_action.joint_positions[:,8] = q_j_ankle_left
-        control_action.joint_positions[:,9] = q_j_ankle_right
-
-        # dummy: store approximate torques for reward computation
-        error_pos = control_action.joint_positions - joint_pos
-        error_vel = control_action.joint_velocities - joint_vel
-        
-        self.computed_effort = self.stiffness * error_pos + self.damping * error_vel + control_action.joint_efforts
-
-        # clip the torques based on the motor limits
-        self.applied_effort = self._clip_effort(self.computed_effort)
-
-        return control_action
+    return jp.hstack([policy_q, policy_dq])

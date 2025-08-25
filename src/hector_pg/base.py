@@ -9,8 +9,9 @@ from ml_collections import config_dict
 import mujoco
 from mujoco import mjx
 
-from mujoco_playground._src import mjx_env
 from hector_pg import constants as consts
+from mujoco_playground._src import mjx_env
+
 
 def get_assets() -> Dict[str, bytes]:
   assets = {}

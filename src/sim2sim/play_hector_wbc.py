@@ -7,12 +7,12 @@ import numpy as np
 import onnxruntime as rt
 
 from hector_pg import constants as hector_constants
-from hector_pg.base import get_assets
+from mujoco_playground._src import mjx_env
 #from mujoco_playground.experimental.sim2sim.gamepad_reader import Gamepad
 
 # lcm external setup
 import lcm
-from .lcm_t.exlcm import twist_t
+from lcm_t.exlcm import twist_t
 import os
 import select
 
@@ -20,20 +20,21 @@ _HERE = epath.Path(__file__).parent
 _ONNX_DIR = _HERE / 'onnx' / 'wbc'
 
 vel_cmd_global = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-
 def lcm_handle(channel, data):
     msg = twist_t.decode(data)
     
     def map_deadzone(_in, min=1.0, max=2.0):
-      if abs(_in) < 0.2:
+      if abs(_in) < 0.1:
         return 0.0
       dir = np.sign(_in)
       out = dir * (abs(_in) + min)
       return np.clip(out, -max, max)
 
-    vel_cmd_global[0] = map_deadzone(msg.x_vel[0], min=0.9, max=1.9)
-    vel_cmd_global[1] = map_deadzone(msg.y_vel[0], min=0.8, max=1.5)
-    vel_cmd_global[2] = map_deadzone(msg.omega_vel[0], min=0.8, max=1.6)
+    vel_cmd_global[0] = map_deadzone(msg.x_vel[0], min=1.0, max=1.5)
+    vel_cmd_global[1] = map_deadzone(msg.y_vel[0], min=1.0, max=1.5)
+    vel_cmd_global[2] = map_deadzone(msg.omega_vel[0], min=1.2, max=1.5)
+    
+    print(vel_cmd_global)
 
 
 
@@ -66,7 +67,7 @@ class OnnxController:
     self._n_substeps = n_substeps
 
     self._phase = np.array([0.0, np.pi])
-    self._gait_freq = 1.0
+    self._gait_freq = 1.2
     self._phase_dt = 2 * np.pi * self._gait_freq * ctrl_dt
 
     self.lc = lcm.LCM()
@@ -154,9 +155,12 @@ class OnnxController:
 def load_callback(model=None, data=None):
   mujoco.set_mjcb_control(None)
 
+  assets = {}
+  mjx_env.update_assets(assets, hector_constants.ROOT_PATH / "xmls", "*.xml")
+  mjx_env.update_assets(assets, hector_constants.ROOT_PATH / "xmls" / "meshes")
   model = mujoco.MjModel.from_xml_path(
       hector_constants.FEET_ONLY_FLAT_TERRAIN_XML.as_posix(),
-      assets=get_assets(),
+      assets,
   )
   data = mujoco.MjData(model)
 
@@ -168,11 +172,11 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / 'hector_wbc_s2_0821.onnx').as_posix(),
+      policy_path=(_ONNX_DIR / 'wbc_s2_0825_2.onnx').as_posix(),
       default_angles=np.array(model.keyframe("home").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
-      action_scale=0.5
+      action_scale=0.75
   )
 
   # Set first step control

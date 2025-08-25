@@ -49,9 +49,9 @@ def default_config() -> config_dict.ConfigDict:
           scales=config_dict.create(
               # Tracking related rewards.
               tracking_lin_vel=2.0,
-              tracking_ang_vel=2.0,
-              tracking_vel_hard=1.0,
-              tracking_body_height=0.0,
+              tracking_ang_vel=1.5,
+              #tracking_vel_hard=0.0,
+              #tracking_body_height=0.0,
               #tracking_body_euler=0.0,
               #tracking_arm=0.0,
               # Base related rewards.
@@ -59,29 +59,29 @@ def default_config() -> config_dict.ConfigDict:
               ang_vel_xy=-0.25,#-0.25,
               orientation=1.0,
               # Energy related rewards.
-              energy=-0.0, #-1e-4,
+              energy=-0.0,
               smoothness=-0.0,
               #contact_force=-0.0,
-              dof_acc = -0.0, #-1e-7,
-              dof_vel = -0.0, #-1e-4,
+              #dof_acc = -0.0, #-1e-7,
+              #dof_vel = -0.0, #-1e-4,
               # Feet related rewards.
               #feet_phase=2.0,#2.0,
-              feet_air_time=2.0,
+              #feet_air_time=2.0,
               feet_height=2.0,
-              feet_slip=-0.15,#-0.15,
+              feet_slip=-0.25,
               undesired_contact=-3.0,
-              feet_upright=-0.15,
+              feet_upright=-0.25,
               # Other rewards.
               alive=0.5,
               termination=-1.0,
-              stand_still=-1.0, # -1.0
+              #stand_still=-0.0, # -1.0
               # Pose related rewards.
               #joint_deviation_knee=-0.0,
-              joint_deviation_hip=-0.5,
-              dof_pos_limits=-0.5,
-              pose=-1.0,
+              joint_deviation_hip=-0.25,
+              dof_pos_limits=-0.25,
+              pose=-0.5,
           ),
-          max_foot_height=0.10,
+          max_foot_height=0.15,
           max_contact_force=250.0,
           # Force threshold that holds as contact
           feet_f_contact = 5.0,
@@ -172,8 +172,8 @@ class WBC(hector_base.HectorEnv):
     self._weights = jp.array([
         1.0, 1.0, 0.01, 0.01, 0.01,  # left leg.
         1.0, 1.0, 0.01, 0.01, 0.01,  # right leg. # 0.5
-        1.0, 1.0, 1.0, 1.0,   # left arm
-        1.0, 1.0, 1.0, 1.0,   # right arm
+        0.5, 0.5, 0.5, 0.5,   # left arm
+        0.5, 0.5, 0.5, 0.5,   # right arm
     ])
     # fmt: on
 
@@ -219,8 +219,8 @@ class WBC(hector_base.HectorEnv):
         # Tracking rewards
         'tracking_lin_vel': self._reward_tracking_lin_vel,
         'tracking_ang_vel': self._reward_tracking_ang_vel,
-        'tracking_vel_hard': self._reward_tracking_vel_hard,
-        'tracking_body_height': self._reward_tracking_body_height,
+        #'tracking_vel_hard': self._reward_tracking_vel_hard,
+        #'tracking_body_height': self._reward_tracking_body_height,
         # Stay balanced
         'lin_vel_z': self._cost_lin_vel_z,
         'ang_vel_xy': self._cost_ang_vel_xy,
@@ -228,18 +228,18 @@ class WBC(hector_base.HectorEnv):
         # Energy terms
         'energy': self._cost_energy,
         'smoothness': self._cost_smoothness,
-        'dof_acc': self._cost_dof_acc,
-        'dof_vel': self._cost_dof_vel,
+        #'dof_acc': self._cost_dof_acc,
+        #'dof_vel': self._cost_dof_vel,
         # Gait shaping
         'feet_height': self._reward_feet_height,
-        'feet_air_time': self._reward_feet_air_time,
+        #'feet_air_time': self._reward_feet_air_time,
         'feet_slip': self._cost_feet_slip,
         'undesired_contact': self._cost_undesired_contact,
         'feet_upright': self._cost_feet_upright,
         # Alive
         'alive': self._reward_alive,
         'termination': self._cost_termination,
-        'stand_still': self._cost_stand_still,
+        #'stand_still': self._cost_stand_still,
         # Others
         'dof_pos_limits': self._cost_joint_pos_limits,
         'pose': self._cost_pose,
@@ -293,9 +293,9 @@ class WBC(hector_base.HectorEnv):
     )
     data = mjx.forward(self.mjx_model, data)
 
-    # Phase, freq=U(1.0, 1.5)
+    # Phase, freq=U(0.5, 0.8)
     rng, key = jax.random.split(rng)
-    gait_freq = jax.random.uniform(key, (1,), minval=1.25, maxval=1.5)
+    gait_freq = jax.random.uniform(key, (1,), minval=0.5, maxval=0.8)
     phase_dt = 2 * jp.pi * self.dt * gait_freq
     # Init phase set here, always a phase diff across 2 legs
     phase = jp.array([0, jp.pi])

@@ -63,8 +63,8 @@ bar_spacing = 20
 base_y = height - 10
 
 # Velocity magnitude
-linear_vv = 0.4
-angular_vv = 1.1
+linear_vv = 1.5
+angular_vv = 1.5
 
 clock = pygame.time.Clock()
 
