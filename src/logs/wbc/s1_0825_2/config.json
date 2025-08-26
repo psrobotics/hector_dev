@@ -71,7 +71,7 @@
         "default_p": 0.1,
         "feet_f_contact": 5.0,
         "max_contact_force": 250.0,
-        "max_foot_height": 0.15,
+        "max_foot_height": 0.1,
         "scales": {
             "alive": 0.5,
             "ang_vel_xy": -0.25,
@@ -81,7 +81,7 @@
             "feet_slip": -0.25,
             "feet_upright": -0.25,
             "joint_deviation_hip": -0.25,
-            "lin_vel_z": -0.1,
+            "lin_vel_z": -0.15,
             "orientation": 1.0,
             "pose": -0.5,
             "smoothness": -0.0,
