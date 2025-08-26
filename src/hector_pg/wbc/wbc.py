@@ -55,7 +55,7 @@ def default_config() -> config_dict.ConfigDict:
               #tracking_body_euler=0.0,
               #tracking_arm=0.0,
               # Base related rewards.
-              lin_vel_z=-0.1,
+              lin_vel_z=-0.15,
               ang_vel_xy=-0.25,#-0.25,
               orientation=1.0,
               # Energy related rewards.
@@ -81,7 +81,7 @@ def default_config() -> config_dict.ConfigDict:
               dof_pos_limits=-0.25,
               pose=-0.5,
           ),
-          max_foot_height=0.15,
+          max_foot_height=0.10,
           max_contact_force=250.0,
           # Force threshold that holds as contact
           feet_f_contact = 5.0,
@@ -293,9 +293,9 @@ class WBC(hector_base.HectorEnv):
     )
     data = mjx.forward(self.mjx_model, data)
 
-    # Phase, freq=U(1.0, 1.3)
+    # Phase, freq=U(1.7, 2.0)
     rng, key = jax.random.split(rng)
-    gait_freq = jax.random.uniform(key, (1,), minval=1.0, maxval=1.3)
+    gait_freq = jax.random.uniform(key, (1,), minval=1.7, maxval=2.0)
     phase_dt = 2 * jp.pi * self.dt * gait_freq
     # Init phase set here, always a phase diff across 2 legs
     phase = jp.array([0, jp.pi])
@@ -832,8 +832,8 @@ class WBC(hector_base.HectorEnv):
   
   def _cost_feet_upright(self, context: Dict[str, Any]) -> jax.Array:
     z_fz = context['zaxis_fz']
-    c_l = jp.sum(jp.square(z_fz[0:2]))
-    c_r = jp.sum(jp.square(z_fz[3:5]))
+    c_l = jp.sum(jp.square(z_fz[0])) # Only care about x axis projection
+    c_r = jp.sum(jp.square(z_fz[3]))
     return c_l+c_r
     
   
