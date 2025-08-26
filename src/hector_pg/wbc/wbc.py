@@ -234,7 +234,7 @@ class WBC(hector_base.HectorEnv):
         'feet_height': self._reward_feet_height,
         #'feet_air_time': self._reward_feet_air_time,
         'feet_slip': self._cost_feet_slip,
-        'undesired_contact': self._cost_undesired_contact,
+        'undesired_contact': self._cost_undesired_contact_new,
         'feet_upright': self._cost_feet_upright,
         # Alive
         'alive': self._reward_alive,
@@ -447,7 +447,7 @@ class WBC(hector_base.HectorEnv):
     # Target stance contact, match giat_rz
     state.info["desired_contact"] = gait.get_rz_phase(state.info["phase"],
                                                       self._config.reward_config.max_foot_height,
-                                                      self._config.reward_config.airtime) <= 1e-3
+                                                      self._config.reward_config.airtime) <= 5e-3
     #jp.sin(state.info["phase"]) <= 0    
     
     state.info["last_last_act"] = state.info["last_act"]
@@ -851,6 +851,12 @@ class WBC(hector_base.HectorEnv):
     # both feet airborne?
     both_air = jp.logical_not(jp.any(contact)).astype(jp.float32)  # Scalar
     return w_both_air * both_air
+
+  def _cost_undesired_contact_new(self, context: Dict[str, Any]) -> jax.Array:
+    contact = context['contact']
+    desired_contact = context['desired_contact']
+    mismatch = jp.not_equal(contact, desired_contact) 
+    return jp.sum(mismatch.astype(jp.float32))
   
   # Sample in command space, command dim defined here
   def sample_command(self, rng: jax.Array) -> jax.Array:
