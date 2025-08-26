@@ -293,9 +293,9 @@ class WBC(hector_base.HectorEnv):
     )
     data = mjx.forward(self.mjx_model, data)
 
-    # Phase, freq=U(0.5, 0.8)
+    # Phase, freq=U(1.0, 1.3)
     rng, key = jax.random.split(rng)
-    gait_freq = jax.random.uniform(key, (1,), minval=0.5, maxval=0.8)
+    gait_freq = jax.random.uniform(key, (1,), minval=1.0, maxval=1.3)
     phase_dt = 2 * jp.pi * self.dt * gait_freq
     # Init phase set here, always a phase diff across 2 legs
     phase = jp.array([0, jp.pi])
