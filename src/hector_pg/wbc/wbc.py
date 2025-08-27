@@ -71,7 +71,7 @@ def default_config() -> config_dict.ConfigDict:
               feet_slip=-0.25,
               undesired_contact=-3.0,
               feet_upright=-0.3,
-              feet_dist=-0.3,
+              feet_dist=-5e4,
               # --- Other rewards ---
               alive=0.5,
               termination=-1.0,
@@ -87,7 +87,7 @@ def default_config() -> config_dict.ConfigDict:
           # Force threshold that holds as contact
           feet_f_contact = 5.0,
           # Desired airtime within phase (1.0 scale)
-          airtime = 0.45, #0.65
+          airtime = 0.6, #0.45
           # In what precentage control will be ruleout
           default_p = 0.1,
       ),
@@ -300,7 +300,7 @@ class WBC(hector_base.HectorEnv):
 
     # Phase, freq=U(1.7, 2.0)
     rng, key = jax.random.split(rng)
-    gait_freq = jax.random.uniform(key, (1,), minval=1.2, maxval=1.5)
+    gait_freq = jax.random.uniform(key, (1,), minval=1.7, maxval=2.0)
     phase_dt = 2 * jp.pi * self.dt * gait_freq
     # Init phase set here, always a phase diff across 2 legs
     phase = jp.array([0, jp.pi])
