@@ -71,7 +71,7 @@ def default_config() -> config_dict.ConfigDict:
               feet_slip=-0.25,
               undesired_contact=-3.0,
               feet_upright=-0.3,
-              feet_dist=-5e4,
+              feet_dist=-0.0,#-5e4,
               # --- Other rewards ---
               alive=0.5,
               termination=-1.0,
