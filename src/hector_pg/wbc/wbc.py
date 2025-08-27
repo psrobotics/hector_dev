@@ -15,6 +15,7 @@ from mujoco_playground._src.collision import geoms_colliding
 
 from hector_pg import base as hector_base
 from hector_pg import constants as consts
+from hector_pg.utils import ankle_decouple
 
 from dataclasses import dataclass
 from typing import Callable
@@ -47,35 +48,35 @@ def default_config() -> config_dict.ConfigDict:
       ),
       reward_config=config_dict.create(
           scales=config_dict.create(
-              # Tracking related rewards.
+              # --- Tracking related rewards ---
               tracking_lin_vel=2.0,
               tracking_ang_vel=1.5,
               #tracking_vel_hard=0.0,
               #tracking_body_height=0.0,
               #tracking_body_euler=0.0,
               #tracking_arm=0.0,
-              # Base related rewards.
+              # --- Base related rewards ---
               lin_vel_z=-0.15,
               ang_vel_xy=-0.25,#-0.25,
               orientation=1.0,
-              # Energy related rewards.
+              # --- Energy related rewards ---
               energy=-0.0,
               smoothness=-0.0,
               #contact_force=-0.0,
               #dof_acc = -0.0, #-1e-7,
               #dof_vel = -0.0, #-1e-4,
-              # Feet related rewards.
+              # --- Feet related rewards ---
               #feet_air_time=2.0,
               feet_height=2.0,
               feet_slip=-0.25,
               undesired_contact=-3.0,
               feet_upright=-0.3,
               feet_dist=-0.3,
-              # Other rewards.
+              # --- Other rewards ---
               alive=0.5,
               termination=-1.0,
               #stand_still=-0.0, # -1.0
-              # Pose related rewards.
+              # --- Pose related rewards ---
               #joint_deviation_knee=-0.0,
               joint_deviation_hip=-0.25,
               dof_pos_limits=-0.25,
@@ -219,32 +220,32 @@ class WBC(hector_base.HectorEnv):
     
     # Init reward terms
     reward_function_mapping = {
-        # Tracking rewards
+        # --- Tracking rewards ---
         'tracking_lin_vel': self._reward_tracking_lin_vel,
         'tracking_ang_vel': self._reward_tracking_ang_vel,
         #'tracking_vel_hard': self._reward_tracking_vel_hard,
         #'tracking_body_height': self._reward_tracking_body_height,
-        # Stay balanced
+        # --- Stay balanced ---
         'lin_vel_z': self._cost_lin_vel_z,
         'ang_vel_xy': self._cost_ang_vel_xy,
         'orientation': self._reward_base_orientation,
-        # Energy terms
+        # --- Energy terms ---
         'energy': self._cost_energy,
         'smoothness': self._cost_smoothness,
         #'dof_acc': self._cost_dof_acc,
         #'dof_vel': self._cost_dof_vel,
-        # Gait shaping
+        # --- Gait shaping ---
         'feet_height': self._reward_feet_height,
         #'feet_air_time': self._reward_feet_air_time,
         'feet_slip': self._cost_feet_slip,
         'undesired_contact': self._cost_undesired_contact_phase,
         'feet_upright': self._cost_feet_upright,
         'feet_dist': self._cost_feet_dist,
-        # Alive
+        # --- Alive ---
         'alive': self._reward_alive,
         'termination': self._cost_termination,
         #'stand_still': self._cost_stand_still,
-        # Others
+        # --- Others ---
         'dof_pos_limits': self._cost_joint_pos_limits,
         'pose': self._cost_pose,
       # Add other rewards here as we create them
@@ -321,7 +322,7 @@ class WBC(hector_base.HectorEnv):
         "step": 0,
         "command": cmd,
 
-        "motor_targets": jp.zeros(self.mjx_model.nu),
+        "q_tar": jp.zeros(self.mjx_model.nu),
         "feet_air_time": jp.zeros(2),
         "last_contact": jp.zeros(2, dtype=bool),
         "desired_contact": jp.zeros(2, dtype=bool),
@@ -405,11 +406,16 @@ class WBC(hector_base.HectorEnv):
 
     state.info["body_euler"].at[:3].set(get_body_euler(state.data.qpos[3:7]))
 
-    motor_targets = self._default_pose + action * self._config.action_scale
+    q_tar = self._default_pose + action * self._config.action_scale
+    
+    # test, do ankle decouple and ik here, we dont care about velocity
+    qdq_tar_decouple = ankle_decouple.act_fk_qdq(q_tar, jp.zeros(18))
+    q_tar_decouple = qdq_tar_decouple[0:18]
+    
     data = mjx_env.step(
-        self.mjx_model, state.data, motor_targets, self.n_substeps
+        self.mjx_model, state.data, q_tar_decouple, self.n_substeps
     )
-    state.info["motor_targets"] = motor_targets
+    state.info["q_tar"] = q_tar_decouple
 
     # Gemo based contact event
     contact_gemo = jp.array([
