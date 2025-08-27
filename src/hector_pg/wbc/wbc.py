@@ -65,12 +65,12 @@ def default_config() -> config_dict.ConfigDict:
               #dof_acc = -0.0, #-1e-7,
               #dof_vel = -0.0, #-1e-4,
               # Feet related rewards.
-              #feet_phase=2.0,#2.0,
               #feet_air_time=2.0,
               feet_height=2.0,
               feet_slip=-0.25,
               undesired_contact=-3.0,
-              feet_upright=-0.25,
+              feet_upright=-0.3,
+              feet_dist=-0.3,
               # Other rewards.
               alive=0.5,
               termination=-1.0,
@@ -96,6 +96,7 @@ def default_config() -> config_dict.ConfigDict:
           interval_range=[5.0, 10.0],
           magnitude_range=[0.1, 2.0],
       ),
+      # Command sampling ranges
       lin_vel_x=[-1.0, 1.0],
       lin_vel_y=[-1.0, 1.0],
       ang_vel_yaw=[-1.0, 1.0],
@@ -105,9 +106,11 @@ def default_config() -> config_dict.ConfigDict:
       yaw=[-0.0, 0.0],
       arm_qpos_min=[-1.4, -3.14, -1.4, -3.0],
       arm_qpos_max=[1.4, 3.14, 1.4, 3.0],
+      # Feet distance min  max
+      f_dist_range=[0.08, 0.4],
       # Default body height
       body_height_default=0.55,
-      # New support for wrap mjx, pre-set contact container
+
       impl="jax", # "jax" or "warp"
       nconmax=8 * 8192,
       njmax=60,
@@ -234,8 +237,9 @@ class WBC(hector_base.HectorEnv):
         'feet_height': self._reward_feet_height,
         #'feet_air_time': self._reward_feet_air_time,
         'feet_slip': self._cost_feet_slip,
-        'undesired_contact': self._cost_undesired_contact_new,
+        'undesired_contact': self._cost_undesired_contact_phase,
         'feet_upright': self._cost_feet_upright,
+        'feet_dist': self._cost_feet_dist,
         # Alive
         'alive': self._reward_alive,
         'termination': self._cost_termination,
@@ -295,7 +299,7 @@ class WBC(hector_base.HectorEnv):
 
     # Phase, freq=U(1.7, 2.0)
     rng, key = jax.random.split(rng)
-    gait_freq = jax.random.uniform(key, (1,), minval=1.7, maxval=2.0)
+    gait_freq = jax.random.uniform(key, (1,), minval=1.2, maxval=1.5)
     phase_dt = 2 * jp.pi * self.dt * gait_freq
     # Init phase set here, always a phase diff across 2 legs
     phase = jp.array([0, jp.pi])
@@ -631,6 +635,7 @@ class WBC(hector_base.HectorEnv):
       'max_foot_height': self._config.reward_config.max_foot_height,
       'max_fz': self._config.reward_config.max_contact_force,
       'tar_body_height': self._config.body_height_default,
+      'f_dist_range': self._config.f_dist_range,
       'done': done,
       'local_linvel': self.get_local_linvel(data),
       'global_linvel': self.get_global_linvel(data),
@@ -795,17 +800,6 @@ class WBC(hector_base.HectorEnv):
     v_tan = jp.linalg.norm(feet_vel[..., :2], axis=-1)        # (2,)
     # Penalize slip only when that foot is in contact
     return jp.sum(jp.where(contact, v_tan, 0.0))
-
-  def _reward_feet_phase(self, context: Dict[str, Any]) -> jax.Array:
-    sigma = 0.01
-    rz = gait.get_rz_phase(context['phase'],
-                           swing_height=context['max_foot_height'],
-                           airtime=context['airtime'])
-    error = jp.sum(jp.square(context['p_fz'] - rz))
-    reward = jp.exp(-error/sigma) # Ori 0.01
-    cmd_norm = jp.linalg.norm(context['command'][0:3])
-    reward *= cmd_norm > 0.1  # No reward for zero commands.
-    return reward
   
   def _reward_feet_air_time(self, context: Dict[str, Any]) -> jax.Array:
     threshold_min = 0.30
@@ -835,7 +829,15 @@ class WBC(hector_base.HectorEnv):
     c_l = jp.sum(jp.square(z_fz[0])) # Only care about x axis projection
     c_r = jp.sum(jp.square(z_fz[3]))
     return c_l+c_r
-    
+  
+  def _cost_feet_dist(self, context: Dict[str, Any]) -> jax.Array:
+    p_f = context['data'].site_xpos[self._feet_site_id]
+    dmin, dmax = context['f_dist_range'] # min max of target feet distance
+    dist = jp.linalg.norm(p_f[0,:2]-p_f[1,:2])
+    under = jp.maximum(dmin - dist, 0.0)
+    over  = jp.maximum(dist - dmax, 0.0)
+    violation = under + over
+    return violation*violation
   
   def _cost_stand_still(self, context: Dict[str, Any]) -> jax.Array:
     commands = context['command']
@@ -852,7 +854,7 @@ class WBC(hector_base.HectorEnv):
     both_air = jp.logical_not(jp.any(contact)).astype(jp.float32)  # Scalar
     return w_both_air * both_air
 
-  def _cost_undesired_contact_new(self, context: Dict[str, Any]) -> jax.Array:
+  def _cost_undesired_contact_phase(self, context: Dict[str, Any]) -> jax.Array:
     contact = context['contact']
     desired_contact = context['desired_contact']
     mismatch = jp.not_equal(contact, desired_contact) 

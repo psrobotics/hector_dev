@@ -30,9 +30,9 @@ def lcm_handle(channel, data):
       out = dir * (abs(_in) + min)
       return np.clip(out, -max, max)
 
-    vel_cmd_global[0] = map_deadzone(msg.x_vel[0], min=1.0, max=1.5)
-    vel_cmd_global[1] = map_deadzone(msg.y_vel[0], min=1.0, max=1.5)
-    vel_cmd_global[2] = map_deadzone(msg.omega_vel[0], min=1.2, max=1.5)
+    vel_cmd_global[0] = map_deadzone(msg.x_vel[0], min=0.1, max=1.2)
+    vel_cmd_global[1] = map_deadzone(msg.y_vel[0], min=0.1, max=1.2)
+    vel_cmd_global[2] = map_deadzone(msg.omega_vel[0], min=0.1, max=1.2)
     
     print(vel_cmd_global)
 
@@ -67,7 +67,7 @@ class OnnxController:
     self._n_substeps = n_substeps
 
     self._phase = np.array([0.0, np.pi])
-    self._gait_freq = 1.2
+    self._gait_freq = 1.7
     self._phase_dt = 2 * np.pi * self._gait_freq * ctrl_dt
 
     self.lc = lcm.LCM()
@@ -172,11 +172,11 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / 'wbc_s2_0825_2.onnx').as_posix(),
+      policy_path=(_ONNX_DIR / 'wbc_s2_0825_1.onnx').as_posix(),
       default_angles=np.array(model.keyframe("home").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
-      action_scale=0.75
+      action_scale=0.6
   )
 
   # Set first step control
