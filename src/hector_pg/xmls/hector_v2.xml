@@ -20,10 +20,12 @@
             <default class="h_roll">
                 <joint actuatorfrcrange="-33.5 33.5" range="-0.785398 0.785398" armature="0.005"
                     frictionloss="0.05" damping="0.1" />
+                <position kp="50" />
             </default>
             <default class="h_pitch">
                 <joint actuatorfrcrange="-33.5 33.5" range="-3.14 3.14" armature="0.005"
                     frictionloss="0.05" damping="0.1" />
+                <position kp="50" />
             </default>
             <default class="k_pitch">
                 <joint actuatorfrcrange="-67.0 67.0" range="-3.14 3.14" armature="0.005"

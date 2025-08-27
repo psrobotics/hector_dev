@@ -174,8 +174,8 @@ class WBC(hector_base.HectorEnv):
 
     # fmt: off
     self._weights = jp.array([
-        1.0, 1.0, 0.01, 0.01, 0.01,  # left leg.
-        1.0, 1.0, 0.01, 0.01, 0.01,  # right leg. # 0.5
+        0.7, 0.7, 0.01, 0.01, 0.01,  # left leg.
+        0.7, 0.7, 0.01, 0.01, 0.01,  # right leg. # 0.5
         0.5, 0.5, 0.5, 0.5,   # left arm
         0.5, 0.5, 0.5, 0.5,   # right arm
     ])
@@ -409,13 +409,13 @@ class WBC(hector_base.HectorEnv):
     q_tar = self._default_pose + action * self._config.action_scale
     
     # test, do ankle decouple and ik here, we dont care about velocity
-    qdq_tar_decouple = ankle_decouple.act_fk_qdq(q_tar, jp.zeros(18))
-    q_tar_decouple = qdq_tar_decouple[0:18]
+    #qdq_tar_decouple = ankle_decouple.act_fk_qdq(q_tar, jp.zeros(18))
+    #q_tar_decouple = qdq_tar_decouple[0:18]
     
     data = mjx_env.step(
-        self.mjx_model, state.data, q_tar_decouple, self.n_substeps
+        self.mjx_model, state.data, q_tar, self.n_substeps
     )
-    state.info["q_tar"] = q_tar_decouple
+    state.info["q_tar"] = q_tar
 
     # Gemo based contact event
     contact_gemo = jp.array([
@@ -637,11 +637,6 @@ class WBC(hector_base.HectorEnv):
       'contact': contact,
       'first_contact': first_contact,
       'desired_contact': info['desired_contact'],
-      'airtime': self._config.reward_config.airtime,
-      'max_foot_height': self._config.reward_config.max_foot_height,
-      'max_fz': self._config.reward_config.max_contact_force,
-      'tar_body_height': self._config.body_height_default,
-      'f_dist_range': self._config.f_dist_range,
       'done': done,
       'local_linvel': self.get_local_linvel(data),
       'global_linvel': self.get_global_linvel(data),
@@ -660,6 +655,11 @@ class WBC(hector_base.HectorEnv):
       'p_fz': info['feet_pos_z'],
       'zaxis_fz': self.get_feet_zaxis(data),
       
+      'airtime': self._config.reward_config.airtime,
+      'max_foot_height': self._config.reward_config.max_foot_height,
+      'max_fz': self._config.reward_config.max_contact_force,
+      'tar_body_height': self._config.body_height_default,
+      'f_dist_range': self._config.f_dist_range,
     }
     rewards = {}
     for term in self._reward_terms:
