@@ -168,6 +168,7 @@ def step(
     data = data.replace(ctrl=action)
     data = mjx.step(model, data)
     return data, None
+  
 
   return jax.lax.scan(single_step, data, (), n_substeps)[0]
 

@@ -406,14 +406,14 @@ class WBC(hector_base.HectorEnv):
 
     state.info["body_euler"].at[:3].set(get_body_euler(state.data.qpos[3:7]))
 
-    # test, do ankle decouple and ik here, we dont care about velocity
-    q_n = state.data.qpos[7:]
-    dq_n = state.data.qvel[6:]
-    qdq_decouple = ankle_decouple.act_fk_qdq(q_n, dq_n)
-    q_decouple = qdq_decouple[0:18]
-    dq_decouple = qdq_decouple[18:36]
-    state.data.qpos.at[7:].set(q_decouple)
-    state.data.qvel.at[6:].set(dq_decouple)
+    # Test, do ankle decouple and ik here
+    #q_n = state.data.qpos[7:]
+    #dq_n = state.data.qvel[6:]
+    #qdq_decouple = ankle_decouple.act_fk_qdq(q_n, dq_n)
+    #q_decouple = qdq_decouple[0:18]
+    #dq_decouple = qdq_decouple[18:36]
+    #state.data.qpos.at[7:].set(q_decouple)
+    #state.data.qvel.at[6:].set(dq_decouple)
 
     q_tar = self._default_pose + action * self._config.action_scale    
     data = mjx_env.step(

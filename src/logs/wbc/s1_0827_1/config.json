@@ -1,6 +1,6 @@
 {
     "action_repeat": 1,
-    "action_scale": 1.0,
+    "action_scale": 0.75,
     "ang_vel_yaw": [
         -1.0,
         1.0
@@ -71,7 +71,7 @@
         ]
     },
     "reward_config": {
-        "airtime": 0.6,
+        "airtime": 0.45,
         "default_p": 0.1,
         "feet_f_contact": 5.0,
         "max_contact_force": 250.0,
@@ -81,10 +81,10 @@
             "ang_vel_xy": -0.25,
             "dof_pos_limits": -0.25,
             "energy": -0.0,
-            "feet_dist": -50000.0,
+            "feet_dist": -0.0,
             "feet_height": 2.0,
             "feet_slip": -0.25,
-            "feet_upright": -0.3,
+            "feet_upright": -0.25,
             "joint_deviation_hip": -0.25,
             "lin_vel_z": -0.15,
             "orientation": 1.0,
