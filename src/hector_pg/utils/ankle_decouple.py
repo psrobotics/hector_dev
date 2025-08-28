@@ -10,8 +10,8 @@ ARM_SPEC  = jp.array([13, 17])   # joints with extra gear_ratio_arm
 
 MOT_DIR = jp.array([1, 1, 1, 1, 1,
                     1, 1, 1, 1, 1,
-                    1, 1, -1, 1,
-                    1, 1, -1, 1])
+                    1, 1, 1, 1,  # ori 1 1 -1 1 we'll not handle joint dir here
+                    1, 1, 1, 1])
 GEAR_RATIO_KNEE = 2.0
 GEAR_RATIO_ARM = 1.417
 KNEE_OFFSET = -2.38
