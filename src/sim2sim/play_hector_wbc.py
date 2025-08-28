@@ -172,11 +172,11 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / 'wbc_s2_0825_1.onnx').as_posix(),
+      policy_path=(_ONNX_DIR / 'wbc_s2_0827_1.onnx').as_posix(),
       default_angles=np.array(model.keyframe("home").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
-      action_scale=0.6
+      action_scale=0.75
   )
 
   # Set first step control

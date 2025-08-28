@@ -406,16 +406,36 @@ class WBC(hector_base.HectorEnv):
 
     state.info["body_euler"].at[:3].set(get_body_euler(state.data.qpos[3:7]))
 
+    # Get position level joint control
+    q_des = self._default_pose + action * self._config.action_scale   
+    
     # Test, do ankle decouple and ik here
-    #q_n = state.data.qpos[7:]
-    #dq_n = state.data.qvel[6:]
-    #qdq_decouple = ankle_decouple.act_fk_qdq(q_n, dq_n)
-    #q_decouple = qdq_decouple[0:18]
-    #dq_decouple = qdq_decouple[18:36]
-    #state.data.qpos.at[7:].set(q_decouple)
-    #state.data.qvel.at[6:].set(dq_decouple)
-
-    q_tar = self._default_pose + action * self._config.action_scale    
+    # current joint state slice (your model uses base at 0..6)
+    q  = state.data.qpos[7:] 
+    dq = state.data.qvel[6:]  
+    # policy joint-space target 
+    q_tar = jp.array(q_des)  # start from policy targets for all joints
+    # build knee/ankle stacks for both legs: shape (2,2)
+    q2  = jp.stack([q[ankle_decouple.KNEE_IDX],  q[ankle_decouple.ANKLE_IDX]],  axis=1)  # [[kL,aL],[kR,aR]]
+    dq2 = jp.stack([dq[ankle_decouple.KNEE_IDX], dq[ankle_decouple.ANKLE_IDX]], axis=1)
+    q2_des = jp.stack([q_des[ankle_decouple.KNEE_IDX], q_des[ankle_decouple.ANKLE_IDX]], axis=1)
+    # joint -> motor (measured and desired)
+    # m = A @ q2 + b, dm = A @ dq2  (batched over legs)
+    m   = jp.einsum('ij,lj->li', ankle_decouple.A,  q2) + ankle_decouple.b
+    dm  = jp.einsum('ij,lj->li', ankle_decouple.A,  dq2)
+    m_d = jp.einsum('ij,lj->li', ankle_decouple.A,  q2_des) + ankle_decouple.b
+    # motor-space PD torques
+    tau_m = ankle_decouple.Kp_m * (m_d - m) - ankle_decouple.Kd_m * dm # (2,)
+    # map to joint torques: tau_j_pair = A^T @ tau_m
+    tau_pairs = jp.einsum('ij,lj->li', ankle_decouple.AT, tau_m) # (2 legs, 2 joints)
+    # invert sim PD for knee/ankle only:
+    invKp_pair = ankle_decouple.invKp_j[ankle_decouple.pairs] # (2,2)
+    Kd_pair    = ankle_decouple.Kd_j[ankle_decouple.pairs] # (2,2)
+    q2_tar = q2 + invKp_pair * (tau_pairs + Kd_pair * dq2) # (2,2)
+    # write back into the full target vector (knees/ankles only)
+    q_tar = q_tar.at[ankle_decouple.KNEE_IDX].set(q2_tar[:, 0])
+    q_tar = q_tar.at[ankle_decouple.ANKLE_IDX].set(q2_tar[:, 1])
+ 
     data = mjx_env.step(
         self.mjx_model, state.data, q_tar, self.n_substeps
     )
