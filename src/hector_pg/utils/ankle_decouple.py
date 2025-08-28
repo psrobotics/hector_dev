@@ -16,34 +16,6 @@ GEAR_RATIO_KNEE = 2.0
 GEAR_RATIO_ARM = 1.417
 KNEE_OFFSET = -2.38
 
-# motor-space PD for [m_knee, m_ankle] (tune as needed)
-Kp_m = jp.array([35.0, 35.0], dtype=jp.float32)
-Kd_m = jp.array([ 1.5,  1.5], dtype=jp.float32)
-
-# sim position-actuator PD (must match your MJCF)
-# you only gave ankle gains; we’ll start knees = ankles (adjust if different)
-ANKLE_KP, ANKLE_KD = 35.0, 1.5
-KNEE_KP,  KNEE_KD  = 35.0, 1.5  
-
-NJ = 18  # total joints you control (7..7+18 in qpos)
-Kp_j = jp.full((NJ,), ANKLE_KP, dtype=jp.float32)
-Kd_j = jp.full((NJ,), ANKLE_KD, dtype=jp.float32)
-Kp_j = Kp_j.at[KNEE_IDX].set(KNEE_KP)
-Kd_j = Kd_j.at[KNEE_IDX].set(KNEE_KD)
-invKp_j = 1.0 / jp.maximum(Kp_j, 1e-6)
-
-# pair indices (L/R rows: [knee, ankle])
-pairs = jp.stack([KNEE_IDX, ANKLE_IDX], axis=1)  # shape (2,2), int32
-
-# coupling map (motor = A @ joint + b) for knee/ankle
-r = GEAR_RATIO_KNEE
-ko = KNEE_OFFSET
-A  = jp.array([[r, 0.0],
-               [1.0, 1.0]], dtype=jp.float32)
-b  = jp.array([(1.0 - r) * ko,
-                -ko], dtype=jp.float32)
-AT = A.T
-
 
 def obs_ik_qdq(policy_q,
                policy_dq,
