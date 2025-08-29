@@ -62,7 +62,7 @@ def default_config() -> config_dict.ConfigDict:
               # --- Energy related rewards ---
               energy=-0.0,
               smoothness=-0.0,
-              #contact_force=-0.0,
+              contact_force=-0.0,
               #dof_acc = -0.0, #-1e-7,
               #dof_vel = -0.0, #-1e-4,
               # --- Feet related rewards ---
@@ -234,6 +234,7 @@ class WBC(hector_base.HectorEnv):
         'smoothness': self._cost_smoothness,
         #'dof_acc': self._cost_dof_acc,
         #'dof_vel': self._cost_dof_vel,
+        'contact_force': self._cost_contact_force,
         # --- Gait shaping ---
         'feet_height': self._reward_feet_height,
         #'feet_air_time': self._reward_feet_air_time,
@@ -409,13 +410,13 @@ class WBC(hector_base.HectorEnv):
     # Get position level joint control
     q_tar = self._default_pose + action * self._config.action_scale  
     # Test, do ankle decouple and ik here
-    qdq_map = ankle_decouple.obs_ik_qdq(q_tar, jp.zeros_like(q_tar))
-    q_map = qdq_map[0:18]
+    #qdq_map = ankle_decouple.obs_ik_qdq(q_tar, jp.zeros_like(q_tar))
+    #q_map = qdq_map[0:18]
     
     data = mjx_env.step(
-        self.mjx_model, state.data, q_map, self.n_substeps
+        self.mjx_model, state.data, q_tar, self.n_substeps
     )
-    state.info["q_tar"] = q_map
+    state.info["q_tar"] = q_tar
 
     # Gemo based contact event
     contact_gemo = jp.array([
@@ -787,12 +788,11 @@ class WBC(hector_base.HectorEnv):
   def _cost_contact_force(self, context: Dict[str, Any]) -> jax.Array:
     data = context['data']
     max_fz = context['max_fz']
-    
-    l_fz = mjx_env.get_sensor_data(self.mj_model, data, "left_foot_force")
-    r_fz = mjx_env.get_sensor_data(self.mj_model, data, "right_foot_force")
-    cost = jp.clip(jp.abs(l_fz[2])-max_fz, min=0.0)
-    cost += jp.clip(jp.abs(r_fz[2]) - max_fz, min=0.0)
-    return jp.clip(cost, 0.0, 400.0)
+    l_f = mjx_env.get_sensor_data(self.mj_model, data, "left_foot_force")
+    r_f = mjx_env.get_sensor_data(self.mj_model, data, "right_foot_force")
+    l_fz = l_f[2]
+    r_fz = r_f[2]
+    return jp.clip(jp.abs(l_fz)+jp.abs(r_fz), 0.0, 200.0)
 
   def _cost_pose(self, context: Dict[str, Any]) -> jax.Array:
     qpos = context['q']
