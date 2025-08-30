@@ -1,0 +1,110 @@
+{
+    "action_repeat": 1,
+    "action_scale": 0.75,
+    "ang_vel_yaw": [
+        -1.0,
+        1.0
+    ],
+    "arm_qpos_max": [
+        1.4,
+        3.14,
+        1.4,
+        3.0
+    ],
+    "arm_qpos_min": [
+        -1.4,
+        -3.14,
+        -1.4,
+        -3.0
+    ],
+    "body_height": [
+        0.4,
+        0.65
+    ],
+    "body_height_default": 0.55,
+    "ctrl_dt": 0.02,
+    "episode_length": 1000,
+    "f_dist_range": [
+        0.08,
+        0.4
+    ],
+    "history_len": 1,
+    "impl": "jax",
+    "lin_vel_x": [
+        -1.0,
+        1.0
+    ],
+    "lin_vel_y": [
+        -1.0,
+        1.0
+    ],
+    "nconmax": 65536,
+    "njmax": 60,
+    "noise_config": {
+        "level": 1.0,
+        "scales": {
+            "acc": 0.2,
+            "faa_pos": 0.03,
+            "ffe_pos": 0.08,
+            "gravity": 0.05,
+            "gyro": 0.2,
+            "hip_pos": 0.03,
+            "joint_vel": 1.5,
+            "kfe_pos": 0.05,
+            "linvel": 0.1
+        }
+    },
+    "obs_size": 82,
+    "pitch": [
+        -0.5235987755982988,
+        0.5235987755982988
+    ],
+    "push_config": {
+        "enable": true,
+        "interval_range": [
+            5.0,
+            10.0
+        ],
+        "magnitude_range": [
+            0.1,
+            2.0
+        ]
+    },
+    "reward_config": {
+        "airtime": 0.45,
+        "default_p": 0.1,
+        "feet_f_contact": 5.0,
+        "max_contact_force": 250.0,
+        "max_foot_height": 0.1,
+        "scales": {
+            "alive": 0.5,
+            "ang_vel_xy": -0.25,
+            "contact_force": -0.0,
+            "dof_pos_limits": -0.25,
+            "energy": -0.0,
+            "feet_dist": -0.0,
+            "feet_height": 2.0,
+            "feet_slip": -0.25,
+            "feet_upright": -0.25,
+            "joint_deviation_hip": -0.25,
+            "lin_vel_z": -0.15,
+            "orientation": 1.0,
+            "pose": -0.5,
+            "smoothness": -0.0,
+            "termination": -1.0,
+            "tracking_ang_vel": 1.5,
+            "tracking_lin_vel": 2.0,
+            "undesired_contact": -3.0
+        }
+    },
+    "roll": [
+        -0.5235987755982988,
+        0.5235987755982988
+    ],
+    "sim_dt": 0.002,
+    "soft_joint_pos_limit_factor": 0.95,
+    "yaw": [
+        -0.0,
+        0.0
+    ]
+}

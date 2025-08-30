@@ -43,6 +43,8 @@ from mujoco_playground._src.locomotion.t1 import randomize as t1_randomize
 
 from hector_pg.wbc import wbc as hector_wbc
 from hector_pg.wbc import randomize as hector_wbc_randomize
+from hector_pg.joystick import joystick as hector_joystick
+from hector_pg.joystick import randomize as hector_joystick_randomize
 
 
 _envs = {
@@ -91,7 +93,9 @@ _envs = {
     "HectorWBCFlatTerrain": functools.partial(
         hector_wbc.WBC, task="flat_terrain"
     ),
-    
+    "HectorJoystickFlatTerrain": functools.partial(
+        hector_joystick.Joystick, task="flat_terrain"
+    ),
 }
 
 _cfgs = {
@@ -120,6 +124,7 @@ _cfgs = {
     "T1JoystickRoughTerrain": t1_joystick.default_config,
     
     "HectorWBCFlatTerrain":hector_wbc.default_config,
+    "HectorJoystickFlatTerrain":hector_joystick.default_config,
 }
 
 _randomizer = {
@@ -140,6 +145,7 @@ _randomizer = {
     "T1JoystickRoughTerrain": t1_randomize.domain_randomize,
     
     "HectorWBCFlatTerrain":hector_wbc_randomize.domain_randomize,
+    "HectorJoystickFlatTerrain":hector_joystick_randomize.domain_randomize,
 
 }
 

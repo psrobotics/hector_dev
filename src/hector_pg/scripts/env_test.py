@@ -11,8 +11,8 @@ class TestSuite(parameterized.TestCase):
   """Tests for the locomotion environments."""
 
   @parameterized.named_parameters(
-      {"testcase_name": "test_can_create_HectorWBCFlatTerrain", 
-       "env_name": "HectorWBCFlatTerrain"}
+      {"testcase_name": "HectorJoystickFlatTerrain", 
+       "env_name": "HectorJoystickFlatTerrain"}
   )
 
   def test_single_environment(self, env_name: str) -> None:
