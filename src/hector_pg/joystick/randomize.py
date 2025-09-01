@@ -15,7 +15,7 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
     # Floor friction: =U(0.4, 1.0).
     rng, key = jax.random.split(rng)
     geom_friction = model.geom_friction.at[FLOOR_GEOM_ID, 0].set(
-        jax.random.uniform(key, minval=0.4, maxval=1.0)
+        jax.random.uniform(key, minval=0.1, maxval=1.0)
     )
 
     # Scale static friction: *U(0.9, 1.1).
