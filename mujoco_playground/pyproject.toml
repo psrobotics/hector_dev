@@ -24,6 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "brax>=0.12.1",
+    "orbax-checkpoint<=0.5.9"
     "etils",
     "flax",
     "jax",
