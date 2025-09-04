@@ -31,6 +31,7 @@ def default_config() -> config_dict.ConfigDict:
       soft_joint_pos_limit_factor=0.95,
       # OBS size
       obs_size = 67,
+      obs_hist_len = 15,
       # Noise scales
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
@@ -107,10 +108,8 @@ def default_config() -> config_dict.ConfigDict:
       body_height_default=0.55,
 
       delay = config_dict.create(
-          # The number of physics substeps in one control cycle (action_repeat)
-          # A delay of `n_substeps` corresponds to one full control cycle of latency.
           min_delay_step=0,
-          max_delay_step=10, # Up to one full control cycle (0.02s) of delay
+          max_delay_step=10,
           hist_len=10,
       ),
   
@@ -340,13 +339,8 @@ class Joystick(hector_base.HectorEnv):
         "push_step": 0,
         "push_interval_steps": push_interval_steps,
         # Past obs
-        "last_obs_1": jp.zeros(self._config.obs_size, dtype=jp.float32),
-        "last_obs_2": jp.zeros(self._config.obs_size, dtype=jp.float32),
-        "last_obs_3": jp.zeros(self._config.obs_size, dtype=jp.float32),
-        "last_obs_4": jp.zeros(self._config.obs_size, dtype=jp.float32),
-        "last_obs_5": jp.zeros(self._config.obs_size, dtype=jp.float32),
-        "last_obs_6": jp.zeros(self._config.obs_size, dtype=jp.float32),
-        
+        "obs_hist": jp.zeros(self._config.obs_size*self._config.obs_hist_len,
+                              dtype=jp.float32),
         "last_act": jp.zeros(self.mjx_model.nu),
         "last_last_act": jp.zeros(self.mjx_model.nu),
       
@@ -454,13 +448,9 @@ class Joystick(hector_base.HectorEnv):
     state.info["last_act"] = action
   
     # Update history obs
-    obs_n = obs["state"][:self._config.obs_size] 
-    state.info["last_obs_6"] = state.info["last_obs_5"]
-    state.info["last_obs_5"] = state.info["last_obs_4"]
-    state.info["last_obs_4"] = state.info["last_obs_3"]
-    state.info["last_obs_3"] = state.info["last_obs_2"]
-    state.info["last_obs_2"] = state.info["last_obs_1"]
-    state.info["last_obs_1"] = obs_n
+    obs_n = obs["state"][: self._config.obs_size] 
+    state.info["obs_hist"] = jp.concatenate([obs_n,
+                                             state.info["obs_hist"][:-self._config.obs_size]])
     
     state.info["rng"], cmd_rng = jax.random.split(state.info["rng"])
     
@@ -576,11 +566,7 @@ class Joystick(hector_base.HectorEnv):
     # Stack history obs
     state = jp.hstack([
       state_n,
-      info["last_obs_1"],
-      info["last_obs_2"],
-      info["last_obs_3"],
-      info["last_obs_4"],
-      info["last_obs_5"],
+      info["obs_hist"],
     ])
 
     accelerometer = self.get_accelerometer(data)
