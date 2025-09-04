@@ -383,18 +383,8 @@ class Joystick(hector_base.HectorEnv):
     data = state.data.replace(qvel=qvel)
     state = state.replace(data=data)
     
-    state.info["rng"], rng_act_delay = jax.random.split(
-        state.info["rng"]
-    )
-    idx = jax.random.randint(rng_act_delay, shape=(), minval=0, maxval=3)
-    act_chunk = jp.stack([action,
-                         state.info["last_act"],
-                         state.info["last_last_act"]],
-                         axis=0) 
-    act_take = act_chunk[idx]
-
     # Get position level joint control
-    q_tar = self._default_pose + act_take * self._config.action_scale  
+    q_tar = self._default_pose + action * self._config.action_scale  
 
     data = mjx_env.step(
         self.mjx_model, state.data, q_tar, self.n_substeps
