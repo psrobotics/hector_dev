@@ -23,10 +23,10 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-    "brax>=0.12.1",
+    "brax==0.13.0",
     "etils",
     "flax",
-    "jax",
+    "jax==0.5.1",
     "lxml",
     "mediapy",
     "ml_collections",
