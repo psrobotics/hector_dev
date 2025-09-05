@@ -59,17 +59,15 @@ class OnnxController:
     self._last_action = np.zeros_like(default_angles, dtype=np.float32)
     
     self._obs_size = 67
-    self._last_obs_1 = np.zeros(self._obs_size, dtype=np.float32)
-    self._last_obs_2 = np.zeros(self._obs_size, dtype=np.float32)
-    self._last_obs_3 = np.zeros(self._obs_size, dtype=np.float32)
-    self._last_obs_4 = np.zeros(self._obs_size, dtype=np.float32)
-    self._last_obs_5 = np.zeros(self._obs_size, dtype=np.float32)
+    self._obs_hist = 10
+    obs_l = self._obs_size*self._obs_hist
+    self._obs_buffer = np.zeros(obs_l, dtype=np.float32)
 
     self._counter = 0
     self._n_substeps = n_substeps
 
     self._phase = np.array([0.0, np.pi])
-    self._gait_freq = 1.7
+    self._gait_freq = 1.8
     self._phase_dt = 2 * np.pi * self._gait_freq * ctrl_dt
 
     self.lc = lcm.LCM()
@@ -115,19 +113,12 @@ class OnnxController:
     # Stack history obs
     obs = np.hstack([
       obs_n,
-      self._last_obs_1,
-      self._last_obs_2,
-      self._last_obs_3,
-      self._last_obs_4,
-      self._last_obs_5,
+      self._obs_buffer,
     ])
 
-    
-    self._last_obs_5 = self._last_obs_4
-    self._last_obs_4 = self._last_obs_3
-    self._last_obs_3 = self._last_obs_2
-    self._last_obs_2 = self._last_obs_1
-    self._last_obs_1 = obs_n
+    # Update history buffer
+    self._obs_buffer = np.hstack([obs_n,
+                                  self._obs_buffer[:-self._obs_size]])
 
     return obs.astype(np.float32)
 
@@ -176,11 +167,11 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / 'joystick_s2_0830_1.onnx').as_posix(),
+      policy_path=(_ONNX_DIR / 'joystick_s2_0905_1_h10.onnx').as_posix(),
       default_angles=np.array(model.keyframe("home").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
-      action_scale=0.60
+      action_scale=0.50
   )
 
   # Set first step control
