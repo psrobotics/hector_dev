@@ -14,46 +14,46 @@
 
             <position inheritrange="1.0" kp="35" />
             <default class="h_yaw">
-                <joint actuatorfrcrange="-33.5 33.5" range="-0.785398 0.785398" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-33.5 33.5" range="-0.785398 0.785398" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
             </default>
             <default class="h_roll">
-                <joint actuatorfrcrange="-33.5 33.5" range="-0.785398 0.785398" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-33.5 33.5" range="-0.785398 0.785398" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
                 <position kp="50" />
             </default>
             <default class="h_pitch">
-                <joint actuatorfrcrange="-33.5 33.5" range="-3.14 3.14" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-33.5 33.5" range="-3.14 3.14" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
                 <position kp="50" />
             </default>
             <default class="k_pitch">
-                <joint actuatorfrcrange="-67.0 67.0" range="-3.14 3.14" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-67.0 67.0" range="-3.14 3.14" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
             </default>
             <default class="ankle">
-                <joint actuatorfrcrange="-33.5 33.5" range="-1.4 1.4" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-33.5 33.5" range="-1.4 1.4" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
             </default>
 
             <default class="arm_yaw">
-                <joint actuatorfrcrange="-17 17" range="-1.4 1.4" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-17 17" range="-1.4 1.4" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
                 <position kp="5" />
             </default>
             <default class="arm_pitch">
-                <joint actuatorfrcrange="-17 17" range="-3.14 1.5708" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-17 17" range="-3.14 1.5708" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
                 <position kp="5" />
             </default>
             <default class="arm_roll">
-                <joint actuatorfrcrange="-17 17" range="-1.4 1.4" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-17 17" range="-1.4 1.4" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
                 <position kp="5" />
             </default>
             <default class="arm_elbow">
-                <joint actuatorfrcrange="-17 17" range="-3.0 3.0" armature="0.005"
-                    frictionloss="0.05" damping="0.1" />
+                <joint actuatorfrcrange="-17 17" range="-3.0 3.0" armature="0.01"
+                    frictionloss="0.05" damping="0.75" />
                 <position kp="5" />
             </default>
 
