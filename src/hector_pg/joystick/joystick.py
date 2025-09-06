@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Union
 
 import jax
 import jax.numpy as jp
-from jax import lax
+
 from ml_collections import config_dict
 from mujoco import mjx
 from mujoco.mjx._src import math
@@ -32,7 +32,7 @@ def default_config() -> config_dict.ConfigDict:
       soft_joint_pos_limit_factor=0.95,
       # OBS size
       obs_size = 67,
-      obs_hist_len = 3,
+      obs_hist_len = 20,
       # Noise scales
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
@@ -439,22 +439,10 @@ class Joystick(hector_base.HectorEnv):
     state.info["last_act"] = action
   
     # Update history obs
-    #obs_n = obs["state"][: self._config.obs_size] 
-    #state.info["obs_hist"] = jp.concatenate([obs_n,
-    #                                         state.info["obs_hist"][:-self._config.obs_size]])
-    # Jax friendly update history
-    def _roll_obs_hist(hist: jax.Array,
-                      new_obs: jax.Array) -> jax.Array:
-      # hist: shape (H,), new_obs: shape (N,)
-      H = hist.shape[0]               # static at trace time
-      N = new_obs.shape[0]            # static at trace time
-      # Take the first H-N entries (explicit 1-D starts/limits/strides)
-      tail = lax.slice(hist, (0,), (H - N,), (1,))
-      return jp.concatenate([new_obs, tail], axis=0)
-    
-    obs_n = obs["state"][: self._config.obs_size]  # shape (obs_size,)
-    state.info["obs_hist"] = _roll_obs_hist(state.info["obs_hist"], obs_n)
-    
+    obs_n = obs["state"][: self._config.obs_size] 
+    state.info["obs_hist"] = jp.concatenate([obs_n,
+                                             state.info["obs_hist"][:-self._config.obs_size]])
+
     state.info["rng"], cmd_rng = jax.random.split(state.info["rng"])
     
     # Sample twice
