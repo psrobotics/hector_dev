@@ -32,7 +32,7 @@ def default_config() -> config_dict.ConfigDict:
       soft_joint_pos_limit_factor=0.95,
       # OBS size
       obs_size = 67,
-      obs_hist_len = 20,
+      obs_hist_len = 40,
       # Noise scales
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
