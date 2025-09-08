@@ -51,8 +51,8 @@ def default_config() -> config_dict.ConfigDict:
       reward_config=config_dict.create(
           scales=config_dict.create(
               # --- Tracking related rewards ---
-              tracking_lin_vel=2.0,
-              tracking_ang_vel=1.5,
+              tracking_lin_vel=4.0, #2.0.
+              tracking_ang_vel=2.0, #1.5
               #tracking_vel_hard=0.0,
               #tracking_body_height=0.0,
               #tracking_body_euler=0.0,
@@ -96,12 +96,12 @@ def default_config() -> config_dict.ConfigDict:
       push_config=config_dict.create(
           # Disable first to get a init policy
           enable=True,
-          interval_range=[5.0, 10.0],
+          interval_range=[1.0, 5.0], #[5.0, 10.0]
           magnitude_range=[0.1, 2.0],
       ),
       # Command sampling ranges
       lin_vel_x=[-1.0, 1.0],
-      lin_vel_y=[-1.0, 1.0],
+      lin_vel_y=[-0.5, 0.5],
       ang_vel_yaw=[-1.0, 1.0],
       # Feet distance min  max
       f_dist_range=[0.08, 0.4],
@@ -131,7 +131,7 @@ class Joystick(hector_base.HectorEnv):
 
   def __init__(
       self,
-      task: str = "flat_terrain",
+      task: str = "rough_terrain", #"flat_terrain"
       config: config_dict.ConfigDict = default_config(),
       config_overrides: Optional[Dict[str, Union[str, int, list[Any]]]] = None,
   ):
