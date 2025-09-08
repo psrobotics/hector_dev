@@ -59,7 +59,7 @@ class OnnxController:
     self._last_action = np.zeros_like(default_angles, dtype=np.float32)
     
     self._obs_size = 67
-    self._obs_hist = 10
+    self._obs_hist = 20
     obs_l = self._obs_size*self._obs_hist
     self._obs_buffer = np.zeros(obs_l, dtype=np.float32)
 
@@ -167,11 +167,11 @@ def load_callback(model=None, data=None):
   model.opt.timestep = sim_dt
 
   policy = OnnxController(
-      policy_path=(_ONNX_DIR / 'joystick_s2_0905_1_h10.onnx').as_posix(),
+      policy_path=(_ONNX_DIR / 'joystick_s2_0906_1_h20.onnx').as_posix(),
       default_angles=np.array(model.keyframe("home").qpos[7:]),
       ctrl_dt=ctrl_dt,
       n_substeps=n_substeps,
-      action_scale=0.50
+      action_scale=0.60
   )
 
   # Set first step control
