@@ -131,7 +131,7 @@ class Joystick(hector_base.HectorEnv):
 
   def __init__(
       self,
-      task: str = "flat_terrain", #"flat_terrain"
+      task: str = "rough_terrain", #"flat_terrain"
       config: config_dict.ConfigDict = default_config(),
       config_overrides: Optional[Dict[str, Union[str, int, list[Any]]]] = None,
   ):
