@@ -32,7 +32,7 @@ def default_config() -> config_dict.ConfigDict:
       soft_joint_pos_limit_factor=0.95,
       # OBS size
       obs_size = 67,
-      obs_hist_len = 40,
+      obs_hist_len = 10,
       # Noise scales
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
@@ -51,8 +51,8 @@ def default_config() -> config_dict.ConfigDict:
       reward_config=config_dict.create(
           scales=config_dict.create(
               # --- Tracking related rewards ---
-              tracking_lin_vel=4.0, #2.0.
-              tracking_ang_vel=2.0, #1.5
+              tracking_lin_vel=2.0, #2.0.
+              tracking_ang_vel=1.5, #1.5
               #tracking_vel_hard=0.0,
               #tracking_body_height=0.0,
               #tracking_body_euler=0.0,
@@ -70,7 +70,7 @@ def default_config() -> config_dict.ConfigDict:
               # --- Feet related rewards ---
               #feet_air_time=2.0,
               feet_height=2.0,
-              feet_slip=-0.75,
+              feet_slip=-0.5,
               undesired_contact=-3.0,
               feet_upright=-0.25,
               feet_dist=-0.0,#-5e4,
@@ -96,8 +96,8 @@ def default_config() -> config_dict.ConfigDict:
       push_config=config_dict.create(
           # Disable first to get a init policy
           enable=True,
-          interval_range=[1.0, 5.0], #[5.0, 10.0]
-          magnitude_range=[0.1, 2.0],
+          interval_range=[1.0, 3.0], #[5.0, 10.0]
+          magnitude_range=[0.1, 4.0],
       ),
       # Command sampling ranges
       lin_vel_x=[-1.0, 1.0],
@@ -131,7 +131,7 @@ class Joystick(hector_base.HectorEnv):
 
   def __init__(
       self,
-      task: str = "flat_terrain", #"flat_terrain"
+      task: str = "rough_terrain", #"flat_terrain"
       config: config_dict.ConfigDict = default_config(),
       config_overrides: Optional[Dict[str, Union[str, int, list[Any]]]] = None,
   ):
@@ -364,8 +364,8 @@ class Joystick(hector_base.HectorEnv):
 
 
   def step(self, state: mjx_env.State, action: jax.Array) -> mjx_env.State:
-    state.info["rng"], push1_rng, push2_rng = jax.random.split(
-        state.info["rng"], 3
+    state.info["rng"], push1_rng, push2_rng, push3_rng = jax.random.split(
+        state.info["rng"], 4
     )
     push_theta = jax.random.uniform(push1_rng, maxval=2 * jp.pi)
     push_magnitude = jax.random.uniform(
