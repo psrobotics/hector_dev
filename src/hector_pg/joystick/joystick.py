@@ -96,8 +96,8 @@ def default_config() -> config_dict.ConfigDict:
       push_config=config_dict.create(
           # Disable first to get a init policy
           enable=True,
-          interval_range=[1.0, 10.0], #[5.0, 10.0]
-          magnitude_range=[0.1, 3.0],
+          interval_range=[3.0, 10.0], #[5.0, 10.0]
+          magnitude_range=[0.1, 2.0],
       ),
       # Command sampling ranges
       lin_vel_x=[-1.0, 1.0],
