@@ -2,6 +2,7 @@
 """Domain randomization for Hector."""
 
 import jax
+import jax.numpy as jp
 from mujoco import mjx
 import numpy as np
 
@@ -46,14 +47,6 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         body_mass[TORSO_BODY_ID] + dmass
     )
 
-    # Jitter qpos0: +U(-0.05, 0.05).
-    rng, key = jax.random.split(rng)
-    qpos0 = model.qpos0
-    qpos0 = qpos0.at[7:].set(
-        qpos0[7:]
-        + jax.random.uniform(key, shape=(18,), minval=-0.05, maxval=0.05)
-    )
-
     # Joint stiffness: *U(0.8, 1.2).
     rng, key = jax.random.split(rng)
     kp = model.actuator_gainprm[:, 0] * jax.random.uniform(
@@ -74,7 +67,6 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
         dof_frictionloss,
         dof_armature,
         body_mass,
-        qpos0,
         actuator_gainprm,
         actuator_biasprm,
         dof_damping,
@@ -85,7 +77,6 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
       frictionloss,
       armature,
       body_mass,
-      qpos0,
       actuator_gainprm,
       actuator_biasprm,
       dof_damping,
@@ -97,7 +88,6 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
       "dof_frictionloss": 0,
       "dof_armature": 0,
       "body_mass": 0,
-      "qpos0": 0,
       "actuator_gainprm": 0,
       "actuator_biasprm": 0,
       "dof_damping": 0,
@@ -108,7 +98,6 @@ def domain_randomize(model: mjx.Model, rng: jax.Array):
       "dof_frictionloss": frictionloss,
       "dof_armature": armature,
       "body_mass": body_mass,
-      "qpos0": qpos0,
       "actuator_gainprm": actuator_gainprm,
       "actuator_biasprm": actuator_biasprm,
       "dof_damping": dof_damping,

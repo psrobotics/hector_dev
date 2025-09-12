@@ -56,14 +56,14 @@ def default_config() -> config_dict.ConfigDict:
               tracking_lin_vel=2.0, #2.0.
               tracking_ang_vel=1.5, #1.5
               # --- Base related rewards ---
-              lin_vel_z=-0.75,
-              ang_vel_xy=-0.75,
-              #orientation=0.0,
+              lin_vel_z=-0.5,
+              ang_vel_xy=-0.25,
+              orientation=-0.25,
               # --- Energy related rewards ---
               #energy=-0.0,
               smoothness=-0.005,
               #contact_force=-0.0,
-              #dof_acc = -0.0, #-1e-7,
+              dof_acc = -1e-6,
               #dof_vel = -0.0, #-1e-4,
               # --- Feet related rewards ---
               #feet_air_time=2.0,
@@ -80,7 +80,7 @@ def default_config() -> config_dict.ConfigDict:
               #joint_deviation_knee=-0.0,
               #joint_deviation_hip=-0.0,
               #dof_pos_limits=-0.0,
-              pose=-1.0,
+              pose=-0.5,
           ),
           max_foot_height=0.10,
           max_contact_force=250.0,
@@ -95,7 +95,7 @@ def default_config() -> config_dict.ConfigDict:
           # Disable first to get a init policy
           enable=True,
           interval_range=[3.0, 10.0], #[5.0, 10.0]
-          magnitude_range=[0.1, 2.0],
+          magnitude_range=[0.5, 2.0],
       ),
       # Command sampling ranges
       lin_vel_x=[-1.0, 1.0],
@@ -135,9 +135,9 @@ class Joystick(hector_base.HectorEnv):
     self._post_init()
 
   def _post_init(self) -> None:
-    self._init_q = jp.array(self._mj_model.keyframe("home").qpos)
+    self._init_q = jp.array(self._mj_model.keyframe("home").qpos, dtype=jp.float32)
     # First 7 are xyz and rpy quaternion
-    self._default_pose = jp.array(self._mj_model.keyframe("home").qpos[7:])
+    self._default_pose = jp.array(self._mj_model.keyframe("home").qpos[7:], dtype=jp.float32)
 
     # Note: First joint is freejoint, root(torso) joint
     # Also get joint range
@@ -217,21 +217,21 @@ class Joystick(hector_base.HectorEnv):
         # --- Tracking rewards ---
         'tracking_lin_vel': rewards._reward_tracking_lin_vel,
         'tracking_ang_vel': rewards._reward_tracking_ang_vel,
-        #'tracking_vel_hard': self._reward_tracking_vel_hard,
-        #'tracking_body_height': self._reward_tracking_body_height,
+        #'tracking_vel_hard': rewards._reward_tracking_vel_hard,
+        #'tracking_body_height': rewards._reward_tracking_body_height,
         # --- Stay balanced ---
         'lin_vel_z': rewards._cost_lin_vel_z,
         'ang_vel_xy': rewards._cost_ang_vel_xy,
-        #'orientation': rewards._reward_base_orientation,
+        'orientation': rewards._cost_orientation,
         # --- Energy terms ---
         #'energy': rewards._cost_energy,
         'smoothness': rewards._cost_smoothness,
-        #'dof_acc': self._cost_dof_acc,
-        #'dof_vel': self._cost_dof_vel,
+        'dof_acc': rewards._cost_dof_acc,
+        #'dof_vel': rewards._cost_dof_vel,
         'contact_force': rewards._cost_contact_force,
         # --- Gait shaping ---
         'feet_height': rewards._reward_feet_height,
-        #'feet_air_time': self._reward_feet_air_time,
+        #'feet_air_time': rewards._reward_feet_air_time,
         'feet_slip': rewards._cost_feet_slip,
         'undesired_contact': rewards._cost_undesired_contact_phase,
         #'feet_upright': rewards._cost_feet_upright,
@@ -239,7 +239,7 @@ class Joystick(hector_base.HectorEnv):
         # --- Alive ---
         'alive': rewards._reward_alive,
         'termination': rewards._cost_termination,
-        #'stand_still': self._cost_stand_still,
+        #'stand_still': rewards._cost_stand_still,
         # --- Others ---
         #'dof_pos_limits': rewards._cost_joint_pos_limits,
         'pose': rewards._cost_pose,
@@ -280,7 +280,19 @@ class Joystick(hector_base.HectorEnv):
     qvel = qvel.at[0:6].set(
         jax.random.uniform(key, (6,), minval=-0.5, maxval=0.5)
     )
-    
+
+    # Finally rand the default q here, for leg
+    rng, key = jax.random.split(rng)
+    default_pose_rand = self._default_pose.copy()
+    default_pose_rand = default_pose_rand.at[0:10].add(
+        jax.random.uniform(key, (10,), minval=-0.1, maxval=0.1)
+    )
+    rng, key = jax.random.split(rng)
+    idx = jp.array([9, 11, 14, 16], dtype=jp.int32)
+    default_pose_rand = default_pose_rand.at[idx].add(
+        jax.random.uniform(key, (idx.shape[0],), minval=-0.25, maxval=0.25)
+    )
+
     #data = mjx_env.init(self.mjx_model, qpos=qpos, qvel=qvel, ctrl=qpos[7:])
     data = mjx_env.make_data(
         self.mj_model,
@@ -336,7 +348,8 @@ class Joystick(hector_base.HectorEnv):
                               dtype=jp.float32),
         "last_act": jp.zeros(self.mjx_model.nu),
         "last_last_act": jp.zeros(self.mjx_model.nu),
-      
+
+        "default_pose": default_pose_rand,
         # OBS to train forward dynamics
     }
 
@@ -377,7 +390,7 @@ class Joystick(hector_base.HectorEnv):
     state = state.replace(data=data)
     
     # Get position level joint control
-    q_tar = self._default_pose + action * self._config.action_scale  
+    q_tar = state.info["default_pose"] + action * self._config.action_scale  
 
     data = mjx_env.step(
         self.mjx_model, state.data, q_tar, self.n_substeps
@@ -540,7 +553,7 @@ class Joystick(hector_base.HectorEnv):
       noisy_gyro,# 3
       #noisy_acc,
       noisy_gravity, # 3
-      noisy_joint_angles - self._default_pose, # 18
+      noisy_joint_angles - info["default_pose"], # 18
       noisy_joint_vel, # 18
       info["last_act"], # 18
       phase, # 4
@@ -564,7 +577,7 @@ class Joystick(hector_base.HectorEnv):
         gravity,  # 3
         linvel,  # 3
         global_angvel,  # 3
-        joint_angles - self._default_pose,
+        joint_angles - info["default_pose"],
         joint_vel,
         root_height,  # 12
         data.actuator_force,  # 18
@@ -620,6 +633,8 @@ class Joystick(hector_base.HectorEnv):
       'max_fz': self._config.reward_config.max_contact_force,
       'tar_body_height': self._config.body_height_default,
       'f_dist_range': self._config.f_dist_range,
+
+      'default_pose': info["default_pose"]
     }
     rewards = {}
     for term in self._reward_terms:

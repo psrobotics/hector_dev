@@ -31,11 +31,9 @@ def _cost_lin_vel_z(self, context: Dict[str, Any]) -> jax.Array:
 def _cost_ang_vel_xy(self, context: Dict[str, Any]) -> jax.Array:
     return jp.sum(jp.square(context['global_angvel'][:2]))
 
-def _reward_base_orientation(self, context: Dict[str, Any]) -> jax.Array:
+def _cost_orientation(self, context: Dict[str, Any]) -> jax.Array:
     torso_zaxis = context['torso_zaxis']
-    sigma = 0.25
-    err = jp.sum(jp.square(torso_zaxis[:2]))
-    return jp.exp(-err/sigma)
+    return jp.sum(jp.square(torso_zaxis[:2]))
 
 # Energy related rewards.
 def _cost_energy(self, context: Dict[str, Any]) -> jax.Array:
@@ -73,27 +71,27 @@ def _reward_alive(self, context: Dict[str, Any]) -> jax.Array:
 # Pose-related rewards.
 def _cost_joint_deviation_hip(self, context: Dict[str, Any]) -> jax.Array:
     qpos = context['q']
-    cost = jp.sum(jp.abs(qpos[self._hip_indices] - self._default_pose[self._hip_indices]))
+    cost = jp.sum(jp.abs(qpos[self._hip_indices] - context['default_pose'][self._hip_indices]))
     cost *= jp.abs(context['command'][1]) > 0.1 # Maskout if there is large vy command
     return cost
 
 def _cost_joint_deviation_knee(self, context: Dict[str, Any]) -> jax.Array:
     qpos = context['q']
-    err = qpos[self._knee_indices] - self._default_pose[self._knee_indices]
+    err = qpos[self._knee_indices] - context['default_pose'][self._knee_indices]
     return jp.sum(jp.abs(err))
 
 def _cost_contact_force(self, context: Dict[str, Any]) -> jax.Array:
     data = context['data']
     max_fz = context['max_fz']
-    l_f = mjx_env.get_sensor_data(self.mj_model, data, "left_foot_force")
-    r_f = mjx_env.get_sensor_data(self.mj_model, data, "right_foot_force")
+    l_f = mjx_env.get_sensor_data(self.mjx_model, data, "left_foot_force")
+    r_f = mjx_env.get_sensor_data(self.mjx_model, data, "right_foot_force")
     l_fz = l_f[2]
     r_fz = r_f[2]
     return jp.clip(jp.abs(l_fz)+jp.abs(r_fz), 0.0, 200.0)
 
 def _cost_pose(self, context: Dict[str, Any]) -> jax.Array:
     qpos = context['q']
-    return jp.sum(jp.square(qpos - self._default_pose) * self._weights)
+    return jp.sum(jp.square(qpos - context['default_pose']) * self._weights)
 
 # Feet related rewards.
 def _cost_feet_slip(self, context: Dict[str, Any]) -> jax.Array:
@@ -138,7 +136,7 @@ def _cost_stand_still(self, context: Dict[str, Any]) -> jax.Array:
     cmd_norm_twist = jp.linalg.norm(commands[0:3])
     cmd_norm_track = jp.linalg.norm(commands[3:7]-jp.array([context['tar_body_height'], 0.0, 0.0, 0.0]))
     enable = (cmd_norm_twist<0.1) & (cmd_norm_track<0.25)
-    return jp.sum(jp.abs(qpos[0:10] - self._default_pose[0:10])) * enable
+    return jp.sum(jp.abs(qpos[0:10] - context['default_pose'][0:10])) * enable
 
 def _cost_undesired_contact_phase(self, context: Dict[str, Any]) -> jax.Array:
     contact = context['contact']
