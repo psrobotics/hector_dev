@@ -29,7 +29,7 @@ def default_config() -> config_dict.ConfigDict:
       sim_dt=0.002,
       episode_length=1000,
       action_repeat=1,
-      action_scale=0.50,
+      action_scale=0.5,
       history_len=1,
       soft_joint_pos_limit_factor=0.95,
       # OBS size
@@ -56,33 +56,33 @@ def default_config() -> config_dict.ConfigDict:
               tracking_lin_vel=2.0, #2.0.
               tracking_ang_vel=1.5, #1.5
               # --- Base related rewards ---
-              lin_vel_z=-0.5,
-              ang_vel_xy=-0.25,
-              orientation=-0.25,
+              lin_vel_z=-0.15,
+              ang_vel_xy=-0.15,
+              orientation=-1.0,
               # --- Energy related rewards ---
               #energy=-0.0,
-              smoothness=-0.005,
+              smoothness=-0.01,
               #contact_force=-0.0,
-              dof_acc = -1e-6,
+              dof_acc = -0.0,
               #dof_vel = -0.0, #-1e-4,
               # --- Feet related rewards ---
               #feet_air_time=2.0,
-              feet_height=2.0,
-              feet_slip=-0.5,
-              undesired_contact=-3.0,
+              feet_height=0.5,
+              feet_slip=-0.25,
+              undesired_contact=-1.5,
               #feet_upright=-0.25,
-              feet_dist=-4e3,
+              feet_dist=-0.0,
               # --- Other rewards ---
               alive=0.5,
-              termination=-1.0,
+              termination=-10.0,
               #stand_still=-0.0, # -1.0
               # --- Pose related rewards ---
               #joint_deviation_knee=-0.0,
               #joint_deviation_hip=-0.0,
               #dof_pos_limits=-0.0,
-              pose=-0.5,
+              pose=-0.25,
           ),
-          max_foot_height=0.10,
+          max_foot_height=0.08,
           max_contact_force=250.0,
           # Force threshold that holds as contact
           feet_f_contact = 5.0,
@@ -94,7 +94,7 @@ def default_config() -> config_dict.ConfigDict:
       push_config=config_dict.create(
           # Disable first to get a init policy
           enable=True,
-          interval_range=[3.0, 10.0], #[5.0, 10.0]
+          interval_range=[5.0, 10.0], #[5.0, 10.0]
           magnitude_range=[0.5, 2.0],
       ),
       # Command sampling ranges
@@ -281,16 +281,16 @@ class Joystick(hector_base.HectorEnv):
         jax.random.uniform(key, (6,), minval=-0.5, maxval=0.5)
     )
 
-    # Finally rand the default q here, for leg
+    # Finally rand the default q here, for initial leg pos
     rng, key = jax.random.split(rng)
     default_pose_rand = self._default_pose.copy()
     default_pose_rand = default_pose_rand.at[0:10].add(
-        jax.random.uniform(key, (10,), minval=-0.1, maxval=0.1)
+        jax.random.uniform(key, (10,), minval=-0.05, maxval=0.05)
     )
     rng, key = jax.random.split(rng)
     idx = jp.array([9, 11, 14, 16], dtype=jp.int32)
     default_pose_rand = default_pose_rand.at[idx].add(
-        jax.random.uniform(key, (idx.shape[0],), minval=-0.25, maxval=0.25)
+        jax.random.uniform(key, (idx.shape[0],), minval=-0.15, maxval=0.15)
     )
 
     #data = mjx_env.init(self.mjx_model, qpos=qpos, qvel=qvel, ctrl=qpos[7:])
@@ -307,7 +307,7 @@ class Joystick(hector_base.HectorEnv):
 
     # Phase, freq=U(1.7, 2.0)
     rng, key = jax.random.split(rng)
-    gait_freq = jax.random.uniform(key, (1,), minval=1.7, maxval=2.0)
+    gait_freq = jax.random.uniform(key, (1,), minval=1.4, maxval=1.7)
     phase_dt = 2 * jp.pi * self.dt * gait_freq
     # Init phase set here, always a phase diff across 2 legs
     phase = jp.array([0, jp.pi])
@@ -356,8 +356,6 @@ class Joystick(hector_base.HectorEnv):
     metrics = {}
     for k in self._config.reward_config.scales.keys():
       metrics[f"reward/{k}"] = jp.zeros(())
-    metrics["swing_peak"] = jp.zeros(())
-    metrics["p_fz"] = jp.zeros(())
 
     contact = jp.array([
         geoms_colliding(data, geom_id, self._floor_geom_id)
@@ -475,8 +473,6 @@ class Joystick(hector_base.HectorEnv):
     # Store scaled rewards for logging
     for k, v in rewards.items():
       state.metrics[f"reward/{k}"] = v
-    state.metrics["swing_peak"] = jp.mean(state.info["swing_peak"])
-    state.metrics["p_fz"] = jp.mean(p_fz)
 
     done = done.astype(reward.dtype)
     state = state.replace(data=data, obs=obs, reward=reward, done=done)
@@ -605,7 +601,7 @@ class Joystick(hector_base.HectorEnv):
       'action': action,
       'last_act': info['last_act'],
       'last_last_act': info['last_last_act'],
-      'info': info,
+
       'command': info['command'],
       'phase': info['phase'],
       'contact': contact,
