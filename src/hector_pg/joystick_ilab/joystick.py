@@ -29,12 +29,12 @@ def default_config() -> config_dict.ConfigDict:
       sim_dt=0.002,
       episode_length=1000,
       action_repeat=1,
-      action_scale=0.5,
+      action_scale=0.75,
       history_len=1,
       soft_joint_pos_limit_factor=0.95,
       # OBS size
       obs_size = 67,
-      obs_hist_len = 10,
+      obs_hist_len = 25,
       # Noise scales
       noise_config=config_dict.create(
           level=1.0,  # Set to 0.0 to disable noise.
@@ -56,30 +56,29 @@ def default_config() -> config_dict.ConfigDict:
               tracking_lin_vel=2.0, #2.0.
               tracking_ang_vel=1.5, #1.5
               # --- Base related rewards ---
-              lin_vel_z=-0.15,
-              ang_vel_xy=-0.15,
-              orientation=-1.0,
+              lin_vel_z=-1.0,
+              ang_vel_xy=-0.5,
+              orientation=-1.5,
               # --- Energy related rewards ---
               #energy=-0.0,
-              smoothness=-0.01,
-              #contact_force=-0.0,
-              dof_acc = -0.0,
+              smoothness=-0.001,
+              contact_vel=-0.5,
+              #dof_acc = -0.0,
               #dof_vel = -0.0, #-1e-4,
               # --- Feet related rewards ---
-              #feet_air_time=2.0,
-              feet_height=0.5,
-              feet_slip=-0.25,
-              undesired_contact=-1.5,
-              #feet_upright=-0.25,
+              feet_height=2.0,
+              feet_slip=-0.5,
+              undesired_contact=-3.0,
+              #feet_upright=-0.25
               feet_dist=-0.0,
               # --- Other rewards ---
               alive=0.5,
-              termination=-10.0,
+              termination=-1.0,
               #stand_still=-0.0, # -1.0
               # --- Pose related rewards ---
               #joint_deviation_knee=-0.0,
               #joint_deviation_hip=-0.0,
-              #dof_pos_limits=-0.0,
+              dof_pos_limits=-1.0,
               pose=-0.25,
           ),
           max_foot_height=0.08,
@@ -87,7 +86,7 @@ def default_config() -> config_dict.ConfigDict:
           # Force threshold that holds as contact
           feet_f_contact = 5.0,
           # Desired airtime within phase (1.0 scale)
-          airtime = 0.35, #0.45
+          airtime = 0.3, #0.45
           # In what precentage control will be ruleout
           default_p = 0.1,
       ),
@@ -95,7 +94,7 @@ def default_config() -> config_dict.ConfigDict:
           # Disable first to get a init policy
           enable=True,
           interval_range=[5.0, 10.0], #[5.0, 10.0]
-          magnitude_range=[0.5, 2.0],
+          magnitude_range=[0.1, 2.0],
       ),
       # Command sampling ranges
       lin_vel_x=[-1.0, 1.0],
@@ -168,8 +167,8 @@ class Joystick(hector_base.HectorEnv):
 
     # fmt: off
     self._weights = jp.array([
-        0.75, 0.2, 0.05, 0.05, 0.05,  # left leg.
-        0.75, 0.2, 0.05, 0.05, 0.05,  # right leg. # 0.5
+        0.75, 0.75, 0.01, 0.01, 0.01,  # left leg.
+        0.75, 0.75, 0.01, 0.01, 0.01,  # right leg. # 0.5
         0.5, 0.5, 0.5, 0.5,   # left arm
         0.5, 0.5, 0.5, 0.5,   # right arm
     ])
@@ -226,12 +225,11 @@ class Joystick(hector_base.HectorEnv):
         # --- Energy terms ---
         #'energy': rewards._cost_energy,
         'smoothness': rewards._cost_smoothness,
-        'dof_acc': rewards._cost_dof_acc,
+        #'dof_acc': rewards._cost_dof_acc,
         #'dof_vel': rewards._cost_dof_vel,
-        'contact_force': rewards._cost_contact_force,
+        'contact_force': rewards._cost_contact_vel,
         # --- Gait shaping ---
         'feet_height': rewards._reward_feet_height,
-        #'feet_air_time': rewards._reward_feet_air_time,
         'feet_slip': rewards._cost_feet_slip,
         'undesired_contact': rewards._cost_undesired_contact_phase,
         #'feet_upright': rewards._cost_feet_upright,
@@ -241,7 +239,7 @@ class Joystick(hector_base.HectorEnv):
         'termination': rewards._cost_termination,
         #'stand_still': rewards._cost_stand_still,
         # --- Others ---
-        #'dof_pos_limits': rewards._cost_joint_pos_limits,
+        'dof_pos_limits': rewards._cost_joint_pos_limits,
         'pose': rewards._cost_pose,
       # Add other rewards here as we create them
     }
@@ -290,7 +288,7 @@ class Joystick(hector_base.HectorEnv):
     rng, key = jax.random.split(rng)
     idx = jp.array([9, 11, 14, 16], dtype=jp.int32)
     default_pose_rand = default_pose_rand.at[idx].add(
-        jax.random.uniform(key, (idx.shape[0],), minval=-0.15, maxval=0.15)
+        jax.random.uniform(key, (idx.shape[0],), minval=-0.1, maxval=0.1)
     )
 
     #data = mjx_env.init(self.mjx_model, qpos=qpos, qvel=qvel, ctrl=qpos[7:])
@@ -307,7 +305,7 @@ class Joystick(hector_base.HectorEnv):
 
     # Phase, freq=U(1.7, 2.0)
     rng, key = jax.random.split(rng)
-    gait_freq = jax.random.uniform(key, (1,), minval=1.4, maxval=1.7)
+    gait_freq = jax.random.uniform(key, (1,), minval=1.25, maxval=1.5)
     phase_dt = 2 * jp.pi * self.dt * gait_freq
     # Init phase set here, always a phase diff across 2 legs
     phase = jp.array([0, jp.pi])
@@ -333,8 +331,10 @@ class Joystick(hector_base.HectorEnv):
         "feet_air_time": jp.zeros(2),
         "last_contact": jp.zeros(2, dtype=bool),
         "desired_contact": jp.zeros(2, dtype=bool),
+        "first_contact": jp.zeros(2, dtype=bool),
         "swing_peak": jp.zeros(2),
         "feet_pos_z": jp.zeros(2),
+        "feet_localvel_hist": jp.zeros(6*3), # [lvx lvy lvz rvx rvy rvz]*3 step
 
         # Phase related.
         "phase_dt": phase_dt,
@@ -406,14 +406,22 @@ class Joystick(hector_base.HectorEnv):
       jp.abs(mjx_env.get_sensor_data(self.mj_model, data, "right_foot_force")[2])
     ]) > self._config.reward_config.feet_f_contact
     # Filter out false contacts
-    contact = contact_gemo & contact_force
-    #contact=contact_gemo
-    
+    contact = jp.logical_and(contact_gemo, contact_force) 
+
     last_contact = state.info["last_contact"] 
     air_time_prev = state.info["feet_air_time"] 
-    # Touchdown = rising edge of contact
+    # Touchdown, rising edge of contact
     first_contact = jp.logical_and(jp.logical_not(last_contact), contact)
+    state.info["first_contact"] = first_contact
 
+    # Touchdown velocity, here we log last 3 step local linvel
+    l_foot_vel = mjx_env.get_sensor_data(self.mj_model, data, "l_toe_local_linvel")
+    r_foot_vel = mjx_env.get_sensor_data(self.mj_model, data, "r_toe_local_linvel")
+    foot_vel = jp.hstack([l_foot_vel, r_foot_vel])
+    # Do rolling hist update
+    state.info["feet_localvel_hist"] = jp.concatenate([foot_vel,
+                                                       state.info["feet_localvel_hist"][:-6]])
+    
     obs = self._get_obs(data, state.info, contact)
     done = self._get_termination(data)
 
@@ -448,7 +456,7 @@ class Joystick(hector_base.HectorEnv):
 
     state.info["rng"], cmd_rng = jax.random.split(state.info["rng"])
     
-    # Sample twice
+    # Resample each 500 steps
     state.info["command"] = jp.where(
         state.info["step"] > 500,
         self.sample_command(cmd_rng),
@@ -623,6 +631,7 @@ class Joystick(hector_base.HectorEnv):
       'feet_air_time': info["feet_air_time"],
       'p_fz': info['feet_pos_z'],
       'zaxis_fz': self.get_feet_zaxis(data),
+      'feet_localvel_hist': info['feet_localvel_hist'],
       
       'airtime': self._config.reward_config.airtime,
       'max_foot_height': self._config.reward_config.max_foot_height,

@@ -121,6 +121,22 @@ def _cost_feet_upright(self, context: Dict[str, Any]) -> jax.Array:
     c_r = jp.sum(jp.square(z_fz[3]))
     return c_l+c_r
 
+def _cost_contact_vel(self, context: Dict[str, Any]) -> jax.Array:
+    first_contact = context['first_contact']
+    v_flat = context['feet_localvel_hist']
+    nftd = 2
+    # (18,) -> (6,H) -> (2 feet, 3 xyz, H)
+    v = v_flat.reshape(6, 3).reshape(2, 3, 3) 
+    # per-foot speed per step: ||v||_2 over xyz -> (2,H)
+    linvel = jp.linalg.norm(v, axis=1)
+    # newest-first buffer => take first nftd columns (t, t-1, t-2)
+    vj_ftd = jp.max(linvel[:, :nftd], axis=1)  # (2,)
+    # mask by first-contact at t
+    mask = jp.squeeze(first_contact, axis=-1) if first_contact.ndim == 2 else first_contact
+    vj_ftd = vj_ftd * mask.astype(vj_ftd.dtype)   
+    # sum over feet -> scalar
+    return jp.sum(vj_ftd)
+
 def _cost_feet_dist(self, context: Dict[str, Any]) -> jax.Array:
     p_f = context['data'].site_xpos[self._feet_site_id]
     dmin, dmax = context['f_dist_range'] # min max of target feet distance

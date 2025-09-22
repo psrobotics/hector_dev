@@ -321,6 +321,8 @@
 
     <framelinvel objtype="site" objname="l_toe" name="l_toe_global_linvel" />
     <framelinvel objtype="site" objname="r_toe" name="r_toe_global_linvel" />
+    <velocimeter site="l_toe" name="l_toe_local_linvel" />
+    <velocimeter site="r_toe" name="r_toe_local_linvel" />
     <framexaxis objtype="site" objname="l_toe" name="l_toe_upvector" />
     <framexaxis objtype="site" objname="r_toe" name="r_toe_upvector" />
 
