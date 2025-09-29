@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hector_pg" 
+name = "bipedal_pg" 
 version = "0.1.0"
 requires-python = ">=3.10"
 
@@ -13,8 +13,9 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["hector_pg*"]
+include = ["hector_pg*", "bai_pg*"]
 
 # include your XML/assets in the wheel
 [tool.setuptools.package-data]
 hector_pg = ["xmls/*.xml", "xmls/**/*.xml", "assets/**/*"]
+bai_pg = ["xmls/*.xml", "xmls/**/*.xml", "assets/**/*"]
