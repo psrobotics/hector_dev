@@ -58,7 +58,7 @@ def default_config() -> config_dict.ConfigDict:
               #tracking_body_euler=0.0,
               #tracking_arm=0.0,
               # --- Base related rewards ---
-              lin_vel_z=-0.15,
+              lin_vel_z=-0.25,
               ang_vel_xy=-0.25,#-0.25,
               orientation=1.0,
               # --- Energy related rewards ---
@@ -69,10 +69,10 @@ def default_config() -> config_dict.ConfigDict:
               #dof_vel = -0.0, #-1e-4,
               # --- Feet related rewards ---
               #feet_air_time=2.0,
-              feet_height=2.0,
-              feet_slip=-0.5,
-              undesired_contact=-3.0,
-              feet_upright=-0.25,
+              feet_height=0.0,
+              feet_slip=-0.0,
+              undesired_contact=-2.0,
+              feet_upright=-0.0,
               feet_dist=-0.0,#-5e4,
               # --- Other rewards ---
               alive=0.5,
@@ -80,9 +80,9 @@ def default_config() -> config_dict.ConfigDict:
               #stand_still=-0.0, # -1.0
               # --- Pose related rewards ---
               #joint_deviation_knee=-0.0,
-              joint_deviation_hip=-0.25,
-              dof_pos_limits=-0.25,
-              pose=-0.5,
+              joint_deviation_hip=-0.0,
+              dof_pos_limits=-0.0,
+              pose=-0.25,
           ),
           max_foot_height=0.10,
           max_contact_force=250.0,
