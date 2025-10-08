@@ -19,7 +19,7 @@ def visualize_home_pose(mjcf_path, key_name="home"):
         mujoco.mj_resetDataKeyframe(model, data, key_id)
 
         # Launch the passive viewer to display the model.
-        print(f"\nDisplaying pose from keyframe '{key_name}'.")
+        print(f"\n Displaying pose from keyframe '{key_name}'.")
         print("Close the viewer window to exit.")
         with mujoco.viewer.launch_passive(model, data) as viewer:
 

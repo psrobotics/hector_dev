@@ -60,24 +60,17 @@ def default_config() -> config_dict.ConfigDict:
               ang_vel_xy=-0.5,
               orientation=-1.5,
               # --- Energy related rewards ---
-              #energy=-0.0,
               smoothness=-0.001,
               contact_vel=-0.5,
-              #dof_acc = -0.0,
-              #dof_vel = -0.0, #-1e-4,
               # --- Feet related rewards ---
               feet_height=2.0,
               feet_slip=-0.5,
               undesired_contact=-3.0,
-              #feet_upright=-0.25
               feet_dist=-0.0,
               # --- Other rewards ---
               alive=0.5,
               termination=-1.0,
-              #stand_still=-0.0, # -1.0
               # --- Pose related rewards ---
-              #joint_deviation_knee=-0.0,
-              #joint_deviation_hip=-0.0,
               dof_pos_limits=-1.0,
               pose=-0.25,
           ),
@@ -216,28 +209,21 @@ class Joystick(hector_base.HectorEnv):
         # --- Tracking rewards ---
         'tracking_lin_vel': rewards._reward_tracking_lin_vel,
         'tracking_ang_vel': rewards._reward_tracking_ang_vel,
-        #'tracking_vel_hard': rewards._reward_tracking_vel_hard,
-        #'tracking_body_height': rewards._reward_tracking_body_height,
         # --- Stay balanced ---
         'lin_vel_z': rewards._cost_lin_vel_z,
         'ang_vel_xy': rewards._cost_ang_vel_xy,
         'orientation': rewards._cost_orientation,
         # --- Energy terms ---
-        #'energy': rewards._cost_energy,
         'smoothness': rewards._cost_smoothness,
-        #'dof_acc': rewards._cost_dof_acc,
-        #'dof_vel': rewards._cost_dof_vel,
-        'contact_force': rewards._cost_contact_vel,
+        'contact_vel': rewards._cost_contact_vel,
         # --- Gait shaping ---
         'feet_height': rewards._reward_feet_height,
         'feet_slip': rewards._cost_feet_slip,
         'undesired_contact': rewards._cost_undesired_contact_phase,
-        #'feet_upright': rewards._cost_feet_upright,
         'feet_dist': rewards._cost_feet_dist,
         # --- Alive ---
         'alive': rewards._reward_alive,
         'termination': rewards._cost_termination,
-        #'stand_still': rewards._cost_stand_still,
         # --- Others ---
         'dof_pos_limits': rewards._cost_joint_pos_limits,
         'pose': rewards._cost_pose,
