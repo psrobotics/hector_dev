@@ -3,19 +3,19 @@ import jax.numpy as jp
 
 
 # Sample in command space, command dim defined here
-def sample_command(self, rng: jax.Array) -> jax.Array:
+def sample_command(env, rng: jax.Array) -> jax.Array:
     min_bounds = jp.array(
         [
-            self._config.lin_vel_x[0],
-            self._config.lin_vel_y[0],
-            self._config.ang_vel_yaw[0],
+            env._config.lin_vel_x[0],
+            env._config.lin_vel_y[0],
+            env._config.ang_vel_yaw[0],
         ]
     )
     max_bounds = jp.array(
         [
-            self._config.lin_vel_x[1],
-            self._config.lin_vel_y[1],
-            self._config.ang_vel_yaw[1],
+            env._config.lin_vel_x[1],
+            env._config.lin_vel_y[1],
+            env._config.ang_vel_yaw[1],
         ]
     )
     default_values = jp.array(
@@ -31,7 +31,7 @@ def sample_command(self, rng: jax.Array) -> jax.Array:
     )
     # With 10% reset all values to default
     cmd = jp.where(
-        jax.random.bernoulli(rng2, p=self._config.reward_config.default_p),
+        jax.random.bernoulli(rng2, p=env._config.reward_config.default_p),
         default_values,
         cmd_sample,
     )

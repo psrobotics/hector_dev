@@ -57,7 +57,8 @@ from hector_pg.joystick import joystick as hector_joystick
 from hector_pg.joystick import randomize as hector_joystick_randomize
 from hector_pg.joystick_ilab import joystick as hector_joystickilab
 from hector_pg.joystick_ilab import randomize as hector_joystickilab_randomize
-
+from hector_pg.joystick_barrier import joystick_barrier_env as hector_joystickbarrier
+from hector_pg.joystick_barrier import randomize as hector_joystickbarrier_randomize
 
 _envs = {
     "ApolloJoystickFlatTerrain": functools.partial(
@@ -106,6 +107,9 @@ _envs = {
     "HectorJoystickFlatTerrainIlab": functools.partial(
         hector_joystickilab.Joystick, task="flat_terrain"
     ),
+    "HectorJoystickFlatTerrainBarrier": functools.partial(
+        hector_joystickbarrier.Joystick, task="flat_terrain"
+    ),
 }
 
 _cfgs = {
@@ -131,6 +135,7 @@ _cfgs = {
     "HectorWBCFlatTerrain": hector_wbc.default_config,
     "HectorJoystickFlatTerrain": hector_joystick.default_config,
     "HectorJoystickFlatTerrainIlab": hector_joystickilab.default_config,
+    "HectorJoystickFlatTerrainBarrier": hector_joystickbarrier.default_config,
 }
 
 _randomizer = {
@@ -152,6 +157,7 @@ _randomizer = {
     "HectorWBCFlatTerrain": hector_wbc_randomize.domain_randomize,
     "HectorJoystickFlatTerrain": hector_joystick_randomize.domain_randomize,
     "HectorJoystickFlatTerrainIlab": hector_joystickilab_randomize.domain_randomize,
+    "HectorJoystickFlatTerrainBarrier": hector_joystickbarrier_randomize.domain_randomize,
 }
 
 

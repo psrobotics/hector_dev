@@ -40,7 +40,9 @@ KNEE_J_NAMES = ["knee"]
 
 # l_toe_pos and r_toe_pos
 FEET_POS_SENSOR = [f"{site}_pos" for site in FEET_SITES]
+FEET_FORCE_SENSOR = ["left_foot_force", "right_foot_force"]
 FEET_ZAXIS = [f"upvec_{site}" for site in FEET_SITES]
+
 
 ROOT_BODY = "torso"
 

@@ -12,8 +12,8 @@ from typing import Callable, List, Dict, Any
 import jax
 import jax.numpy as jp
 
-# Import the reward functions from the same file or from rewards.py
-from . import rewards  # Use this if reward functions are in rewards.py
+from hector_pg import constants as consts
+import sys
 
 
 @dataclass
@@ -28,33 +28,35 @@ class RewardTerm:
 class RewardManager:
     """Calculates total reward by summing dynamically configured terms."""
 
-    def __init__(self, reward_config: Dict[str, Any]):
+    # REMOVE 'env_instance' from the signature
+    def __init__(self, env, reward_config: Dict[str, Any]):
         self.reward_terms: List[RewardTerm] = []
+        self._env = env
         reward_scales = reward_config.get("scales", {})
+
+        current_module = sys.modules[__name__]
 
         for name, scale in reward_scales.items():
             if scale != 0.0:
-                # Dynamically get the function from the 'rewards' module by its name
-                reward_func = getattr(rewards, name, None)
+                # Get the function with the matching name FROM THIS FILE
+                reward_func = getattr(current_module, name, None)
                 if reward_func:
                     self.reward_terms.append(
                         RewardTerm(name=name, scale=scale, func=reward_func)
                     )
                 else:
                     print(
-                        f"Warning: Reward function '{name}' not found in rewards module."
+                        f"Warning: Reward function '{name}' not found in {__name__} module."
                     )
 
     def calculate_rewards(
         self, context: Dict[str, Any]
-    ) -> tuple[jp.Array, Dict[str, jp.Array]]:
-        """Calculates the total scaled reward and a dictionary of unscaled terms."""
+    ) -> tuple[jax.Array, Dict[str, jax.Array]]:
         total_reward = 0.0
         reward_dict = {}
 
         for term in self.reward_terms:
-            # Reward functions with negative scales in config are costs
-            unscaled_reward = term.func(context)
+            unscaled_reward = term.func(self._env, context)  # This will call the method
             total_reward += term.scale * unscaled_reward
             reward_dict[term.name] = unscaled_reward
 
@@ -89,7 +91,7 @@ def _cost_ang_vel_xy(self, context: Dict[str, Any]) -> jax.Array:
 
 
 def _cost_orientation(self, context: Dict[str, Any]) -> jax.Array:
-    torso_zaxis = context["torso_zaxis"]
+    torso_zaxis = context["gravity"]
     return jp.sum(jp.square(torso_zaxis[:2]))
 
 
@@ -152,8 +154,8 @@ def _cost_joint_deviation_knee(self, context: Dict[str, Any]) -> jax.Array:
 def _cost_contact_force(self, context: Dict[str, Any]) -> jax.Array:
     data = context["data"]
     max_fz = context["max_fz"]
-    l_f = mjx_env.get_sensor_data(self.mjx_model, data, "left_foot_force")
-    r_f = mjx_env.get_sensor_data(self.mjx_model, data, "right_foot_force")
+    l_f = mjx_env.get_sensor_data(self.mjx_model, data, consts.FEET_FORCE_SENSOR[0])
+    r_f = mjx_env.get_sensor_data(self.mjx_model, data, consts.FEET_FORCE_SENSOR[1])
     l_fz = l_f[2]
     r_fz = r_f[2]
     return jp.clip(jp.abs(l_fz) + jp.abs(r_fz), 0.0, 200.0)
@@ -161,14 +163,16 @@ def _cost_contact_force(self, context: Dict[str, Any]) -> jax.Array:
 
 def _cost_pose(self, context: Dict[str, Any]) -> jax.Array:
     qpos = context["q"]
-    return jp.sum(jp.square(qpos - context["default_pose"]) * self._weights)
+    return jp.sum(
+        jp.square(qpos - context["default_pose"]) * context["joint_pose_weights"]
+    )
 
 
 # Feet related rewards.
 def _cost_feet_slip(self, context: Dict[str, Any]) -> jax.Array:
     data = context["data"]
     contact = context["contact"]
-    feet_vel = data.sensordata[self._foot_linvel_sensor_adr]  # (2, 3)
+    feet_vel = data.sensordata[self._feet_linvel_sensor_adr]  # (2, 3)
     v_tan = jp.linalg.norm(feet_vel[..., :2], axis=-1)  # (2,)
     # Penalize slip only when that foot is in contact
     return jp.sum(jp.where(contact, v_tan, 0.0))
@@ -237,7 +241,7 @@ def _cost_stand_still(self, context: Dict[str, Any]) -> jax.Array:
     return jp.sum(jp.abs(qpos[0:10] - context["default_pose"][0:10])) * enable
 
 
-def _cost_undesired_contact_phase(self, context: Dict[str, Any]) -> jax.Array:
+def _cost_undesired_contact(self, context: Dict[str, Any]) -> jax.Array:
     contact = context["contact"]
     desired_contact = context["desired_contact"]
     mismatch = jp.not_equal(contact, desired_contact)
