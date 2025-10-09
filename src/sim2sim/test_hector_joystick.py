@@ -9,12 +9,14 @@ import onnxruntime as rt
 import mujoco
 import imageio
 import matplotlib
+
 matplotlib.use("Agg")  # headless plotting
 import matplotlib.pyplot as plt
 
 from etils import epath
 from mujoco_playground._src import mjx_env
 from hector_pg import constants as hector_constants
+
 
 # ------------ Controller (adapted from your script) ------------
 class OnnxController:
@@ -30,7 +32,7 @@ class OnnxController:
         obs_size: int = 67,
         obs_hist: int = 5,
         gait_freq: float = 1.8,
-        action_delay_ticks: int = 0,   # latency measured in control ticks
+        action_delay_ticks: int = 0,  # latency measured in control ticks
         init_wait_steps: int = 80,
         constant_command: Sequence[float] = (0.0, 0.0, 0.0),
     ):
@@ -74,17 +76,21 @@ class OnnxController:
         joint_angles = (data.qpos[7:] - self._default_angles).astype(np.float32)
         joint_velocities = data.qvel[6:].astype(np.float32)
 
-        phase = np.concatenate([np.cos(self._phase), np.sin(self._phase)]).astype(np.float32)
+        phase = np.concatenate([np.cos(self._phase), np.sin(self._phase)]).astype(
+            np.float32
+        )
 
-        obs_n = np.hstack([
-            gyro.astype(np.float32),
-            gravity.astype(np.float32),
-            joint_angles,
-            joint_velocities,
-            self._last_action.astype(np.float32),
-            phase,
-            self._command,
-        ]).astype(np.float32)
+        obs_n = np.hstack(
+            [
+                gyro.astype(np.float32),
+                gravity.astype(np.float32),
+                joint_angles,
+                joint_velocities,
+                self._last_action.astype(np.float32),
+                phase,
+                self._command,
+            ]
+        ).astype(np.float32)
 
         if obs_n.size != self._obs_size:
             raise RuntimeError(
@@ -98,7 +104,9 @@ class OnnxController:
         # Stack history at the *front* (newest first)
         obs = np.hstack([obs_n, self._obs_buffer]).astype(np.float32)
         # Update history buffer (drop oldest obs_size slice)
-        self._obs_buffer = np.hstack([obs_n, self._obs_buffer[:-self._obs_size]]).astype(np.float32)
+        self._obs_buffer = np.hstack(
+            [obs_n, self._obs_buffer[: -self._obs_size]]
+        ).astype(np.float32)
         return obs
 
     def step_control(self, model: mujoco.MjModel, data: mujoco.MjData) -> None:
@@ -106,7 +114,9 @@ class OnnxController:
         # Build observation (with history)
         obs = self.get_obs(model, data)
         onnx_input = {"obs": obs.reshape(1, -1)}
-        onnx_pred = self._policy.run(self._output_names, onnx_input)[0][0].astype(np.float32)
+        onnx_pred = self._policy.run(self._output_names, onnx_input)[0][0].astype(
+            np.float32
+        )
         self._last_action = onnx_pred.copy()
 
         # Scale to joint target
@@ -132,7 +142,9 @@ class OnnxController:
 
         # Advance phase
         next_phase = self._phase + self._phase_dt
-        self._phase = (np.fmod(next_phase + np.pi, 2.0 * np.pi) - np.pi).astype(np.float32)
+        self._phase = (np.fmod(next_phase + np.pi, 2.0 * np.pi) - np.pi).astype(
+            np.float32
+        )
 
         self._counter += 1
 
@@ -155,9 +167,13 @@ class BatchConfig:
     delays: List[int] = None
 
     # disturbance config
-    disturb_time: float = 5.0       # seconds from start
-    disturb_duration: float = 0.1   # seconds
-    disturb_dv: Tuple[float, float, float] = (1.0, 0.0, 0.0)  # delta on base linear velocity (x,y,z)
+    disturb_time: float = 5.0  # seconds from start
+    disturb_duration: float = 0.1  # seconds
+    disturb_dv: Tuple[float, float, float] = (
+        1.0,
+        0.0,
+        0.0,
+    )  # delta on base linear velocity (x,y,z)
 
     # render
     width: int = 1920
@@ -180,9 +196,7 @@ def load_model_and_data() -> Tuple[mujoco.MjModel, mujoco.MjData]:
 
 
 def run_single(
-    onnx_path: Path,
-    delay_ticks: int,
-    cfg: BatchConfig
+    onnx_path: Path, delay_ticks: int, cfg: BatchConfig
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Run a single simulation with a given policy and delay. Returns t, base_xyz arrays."""
     model, data = load_model_and_data()
@@ -226,7 +240,9 @@ def run_single(
     out_base = f"{onnx_path.stem}_delay{delay_ticks}t"
     mp4_path = cfg.out_dir / f"{out_base}.mp4"
     mp4_path.parent.mkdir(parents=True, exist_ok=True)
-    writer = imageio.get_writer(mp4_path.as_posix(), fps=cfg.video_fps, codec="libx264", quality=8)
+    writer = imageio.get_writer(
+        mp4_path.as_posix(), fps=cfg.video_fps, codec="libx264", quality=8
+    )
 
     # Logs
     base_xyz = np.zeros((total_steps, 3), dtype=np.float32)
@@ -236,7 +252,9 @@ def run_single(
     for step in range(total_steps):
         # Disturbance: modify base linear velocity directly
         if disturb_start_step <= step < disturb_end_step:
-            data.qvel[0:3] += dv  # apply once per step inside window (intentional "step-like" kick)
+            data.qvel[
+                0:3
+            ] += dv  # apply once per step inside window (intentional "step-like" kick)
 
         # Control tick?
         if step % ctrl_every == 0:
@@ -246,7 +264,7 @@ def run_single(
             renderer.update_scene(data)
             img = renderer.render()
             writer.append_data(img)
-            
+
         # Step sim
         mujoco.mj_step(model, data)
 
@@ -259,11 +277,15 @@ def run_single(
     return time_s, base_xyz[:, 0], base_xyz[:, 1], base_xyz[:, 2]
 
 
-def plot_base(time_s: np.ndarray,
-              x: np.ndarray, y: np.ndarray, z: np.ndarray,
-              disturb_time: float,
-              out_png: Path,
-              title: str):
+def plot_base(
+    time_s: np.ndarray,
+    x: np.ndarray,
+    y: np.ndarray,
+    z: np.ndarray,
+    disturb_time: float,
+    out_png: Path,
+    title: str,
+):
     plt.figure(figsize=(8, 5))
     plt.subplot(3, 1, 1)
     plt.plot(time_s, x)
@@ -289,9 +311,18 @@ def plot_base(time_s: np.ndarray,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--onnx_dir", type=str, default=str((epath.Path(__file__).parent / "onnx" /"test").as_posix()),
-                        help="Directory containing *.onnx files to test")
-    parser.add_argument("--out_dir", type=str, default="batch_out", help="Output directory for videos/plots")
+    parser.add_argument(
+        "--onnx_dir",
+        type=str,
+        default=str((epath.Path(__file__).parent / "onnx" / "test").as_posix()),
+        help="Directory containing *.onnx files to test",
+    )
+    parser.add_argument(
+        "--out_dir",
+        type=str,
+        default="batch_out",
+        help="Output directory for videos/plots",
+    )
     parser.add_argument("--seconds", type=float, default=10.0)
     parser.add_argument("--ctrl_dt", type=float, default=0.02)
     parser.add_argument("--sim_dt", type=float, default=0.002)
@@ -300,12 +331,20 @@ def main():
     parser.add_argument("--obs_hist", type=int, default=40)
     parser.add_argument("--gait_freq", type=float, default=1.8)
     parser.add_argument("--init_wait_steps", type=int, default=40)
-    parser.add_argument("--delays", type=str, default="0,2,4,6",
-                        help="Comma-separated integers for action-delay ticks")
+    parser.add_argument(
+        "--delays",
+        type=str,
+        default="0,2,4,6",
+        help="Comma-separated integers for action-delay ticks",
+    )
     parser.add_argument("--disturb_time", type=float, default=6.0)
     parser.add_argument("--disturb_duration", type=float, default=0.01)
-    parser.add_argument("--disturb_dv", type=str, default="0.2,0.0,0.0",
-                        help="Comma-separated delta linear velocity (m/s) applied to qvel[0:3]")
+    parser.add_argument(
+        "--disturb_dv",
+        type=str,
+        default="0.2,0.0,0.0",
+        help="Comma-separated delta linear velocity (m/s) applied to qvel[0:3]",
+    )
     parser.add_argument("--width", type=int, default=1920)
     parser.add_argument("--height", type=int, default=1080)
     parser.add_argument("--video_fps", type=int, default=50)

@@ -28,135 +28,136 @@ import numpy as np
 
 class WrapperTest(parameterized.TestCase):
 
-  @parameterized.named_parameters(
-      ('full_reset', True),
-      ('cache_reset', False),
-  )
-  def test_auto_reset_wrapper(self, full_reset):
-    """Tests the AutoResetWrapper."""
-    class DoneEnv:
-
-      def __init__(self, env):
-        self._env = env
-
-      def reset(self, key):
-        state = self._env.reset(key)
-        state.info['AutoResetWrapper_preserve_info'] = 1
-        state.info['other_info'] = 1
-        return state
-
-      def step(self, state, action):
-        state = self._env.step(state, jp.ones_like(action))
-        state = state.replace(done=action[0] > 0)
-        state.info['AutoResetWrapper_preserve_info'] = 2
-        state.info['other_info'] = 2
-        return state
-
-    env = wrapper.BraxAutoResetWrapper(
-        brax_training.VmapWrapper(
-            DoneEnv(dm_control_suite.load('CartpoleBalance'))
-        ),
-        full_reset=full_reset,
+    @parameterized.named_parameters(
+        ("full_reset", True),
+        ("cache_reset", False),
     )
+    def test_auto_reset_wrapper(self, full_reset):
+        """Tests the AutoResetWrapper."""
 
-    jit_reset = jax.jit(env.reset)
-    jit_step = jax.jit(env.step)
-    state = jit_reset(jax.random.PRNGKey(0)[None])
-    first_qpos = state.data.qpos
+        class DoneEnv:
 
-    # First step should not be done.
-    state = jit_step(state, -jp.ones(env._env.action_size)[None])
-    np.testing.assert_allclose(state.info['AutoResetWrapper_done_count'], 0)
-    self.assertGreater(np.linalg.norm(state.data.qpos - first_qpos), 1e-3)
-    self.assertEqual(state.info['AutoResetWrapper_preserve_info'], 2)
-    self.assertEqual(state.info['other_info'], 2)
+            def __init__(self, env):
+                self._env = env
 
-    for i in range(1, 3):
-      state = jit_step(state, jp.ones(env._env.action_size)[None])
-      jax.tree.map(lambda x: x.block_until_ready(), state)
-      if full_reset:
-        self.assertTrue((state.data.qpos != first_qpos).all())
-      else:
-        np.testing.assert_allclose(state.data.qpos, first_qpos, atol=1e-6)
-      np.testing.assert_allclose(state.info['AutoResetWrapper_done_count'], i)
-      self.assertEqual(state.info['AutoResetWrapper_preserve_info'], 2)
-      expected_other_info = 1 if full_reset else 2
-      self.assertEqual(state.info['other_info'], expected_other_info)
+            def reset(self, key):
+                state = self._env.reset(key)
+                state.info["AutoResetWrapper_preserve_info"] = 1
+                state.info["other_info"] = 1
+                return state
 
-  @parameterized.named_parameters(
-      ('full_reset', True),
-      ('cache_reset', False),
-  )
-  def test_evalwrapper_with_reset(self, full_reset):
-    """Tests EvalWrapper with reset in the AutoResetWrapper."""
-    episode_length = 10
-    num_envs = 4
+            def step(self, state, action):
+                state = self._env.step(state, jp.ones_like(action))
+                state = state.replace(done=action[0] > 0)
+                state.info["AutoResetWrapper_preserve_info"] = 2
+                state.info["other_info"] = 2
+                return state
 
-    env = dm_control_suite.load('CartpoleBalance')
-    env = wrapper.wrap_for_brax_training(
-        env,
-        episode_length=episode_length,
-        full_reset=full_reset,
+        env = wrapper.BraxAutoResetWrapper(
+            brax_training.VmapWrapper(
+                DoneEnv(dm_control_suite.load("CartpoleBalance"))
+            ),
+            full_reset=full_reset,
+        )
+
+        jit_reset = jax.jit(env.reset)
+        jit_step = jax.jit(env.step)
+        state = jit_reset(jax.random.PRNGKey(0)[None])
+        first_qpos = state.data.qpos
+
+        # First step should not be done.
+        state = jit_step(state, -jp.ones(env._env.action_size)[None])
+        np.testing.assert_allclose(state.info["AutoResetWrapper_done_count"], 0)
+        self.assertGreater(np.linalg.norm(state.data.qpos - first_qpos), 1e-3)
+        self.assertEqual(state.info["AutoResetWrapper_preserve_info"], 2)
+        self.assertEqual(state.info["other_info"], 2)
+
+        for i in range(1, 3):
+            state = jit_step(state, jp.ones(env._env.action_size)[None])
+            jax.tree.map(lambda x: x.block_until_ready(), state)
+            if full_reset:
+                self.assertTrue((state.data.qpos != first_qpos).all())
+            else:
+                np.testing.assert_allclose(state.data.qpos, first_qpos, atol=1e-6)
+            np.testing.assert_allclose(state.info["AutoResetWrapper_done_count"], i)
+            self.assertEqual(state.info["AutoResetWrapper_preserve_info"], 2)
+            expected_other_info = 1 if full_reset else 2
+            self.assertEqual(state.info["other_info"], expected_other_info)
+
+    @parameterized.named_parameters(
+        ("full_reset", True),
+        ("cache_reset", False),
     )
-    env = brax_training.EvalWrapper(env)
+    def test_evalwrapper_with_reset(self, full_reset):
+        """Tests EvalWrapper with reset in the AutoResetWrapper."""
+        episode_length = 10
+        num_envs = 4
 
-    jit_reset = jax.jit(env.reset)
-    jit_step = jax.jit(env.step)
+        env = dm_control_suite.load("CartpoleBalance")
+        env = wrapper.wrap_for_brax_training(
+            env,
+            episode_length=episode_length,
+            full_reset=full_reset,
+        )
+        env = brax_training.EvalWrapper(env)
 
-    rng = jax.random.PRNGKey(0)
-    rng = jax.random.split(rng, num_envs)
-    state = jit_reset(rng)
-    first_obs = state.obs
-    action = jp.zeros((num_envs, env.action_size))
+        jit_reset = jax.jit(env.reset)
+        jit_step = jax.jit(env.step)
 
-    for _ in range(episode_length):
-      state = jit_step(state, action)
+        rng = jax.random.PRNGKey(0)
+        rng = jax.random.split(rng, num_envs)
+        state = jit_reset(rng)
+        first_obs = state.obs
+        action = jp.zeros((num_envs, env.action_size))
 
-    # All episodes should finish at episode_length.
-    avg_episode_length = state.info['eval_metrics'].episode_steps.mean()
-    np.testing.assert_allclose(avg_episode_length, episode_length, atol=1e-6)
-    active_episodes = state.info['eval_metrics'].active_episodes
-    self.assertTrue(np.all(active_episodes == 0))
+        for _ in range(episode_length):
+            state = jit_step(state, action)
 
-    np.testing.assert_array_equal(state.info['steps'], 10 * np.ones(num_envs))
-    if full_reset:
-      self.assertTrue((state.obs != first_obs).all())
-    else:
-      np.testing.assert_allclose(state.obs, first_obs, rtol=1e-6)
+        # All episodes should finish at episode_length.
+        avg_episode_length = state.info["eval_metrics"].episode_steps.mean()
+        np.testing.assert_allclose(avg_episode_length, episode_length, atol=1e-6)
+        active_episodes = state.info["eval_metrics"].active_episodes
+        self.assertTrue(np.all(active_episodes == 0))
 
-  def test_domain_randomization_wrapper(self):
-    def randomization_fn(model, rng):
-      @jax.vmap
-      def get_gravity(rng):
-        dg = jax.random.uniform(rng, shape=(3,), minval=-10.0, maxval=10.0)
-        return model.opt.gravity + dg
+        np.testing.assert_array_equal(state.info["steps"], 10 * np.ones(num_envs))
+        if full_reset:
+            self.assertTrue((state.obs != first_obs).all())
+        else:
+            np.testing.assert_allclose(state.obs, first_obs, rtol=1e-6)
 
-      model_v = model.tree_replace({'opt.gravity': get_gravity(rng)})
-      in_axes = jax.tree.map(lambda x: None, model)
-      in_axes = in_axes.tree_replace({'opt.gravity': 0})
-      return model_v, in_axes
+    def test_domain_randomization_wrapper(self):
+        def randomization_fn(model, rng):
+            @jax.vmap
+            def get_gravity(rng):
+                dg = jax.random.uniform(rng, shape=(3,), minval=-10.0, maxval=10.0)
+                return model.opt.gravity + dg
 
-    env = dm_control_suite.load('CartpoleBalance')
-    rng = jax.random.PRNGKey(0)
-    rng = jax.random.split(rng, 256)
-    env = wrapper.wrap_for_brax_training(
-        env,
-        episode_length=200,
-        randomization_fn=functools.partial(randomization_fn, rng=rng),
-    )
+            model_v = model.tree_replace({"opt.gravity": get_gravity(rng)})
+            in_axes = jax.tree.map(lambda x: None, model)
+            in_axes = in_axes.tree_replace({"opt.gravity": 0})
+            return model_v, in_axes
 
-    # set the same key across the batch for env.reset so that only the
-    # randomization wrapper creates variability in the env.step
-    key = jp.zeros((256, 2), dtype=jp.uint32)
-    state = jax.jit(env.reset)(key)
-    self.assertEqual(state.data.qpos[:, 0].shape[0], 256)
-    self.assertEqual(np.unique(state.data.qpos[:, 0]).shape[0], 1)
+        env = dm_control_suite.load("CartpoleBalance")
+        rng = jax.random.PRNGKey(0)
+        rng = jax.random.split(rng, 256)
+        env = wrapper.wrap_for_brax_training(
+            env,
+            episode_length=200,
+            randomization_fn=functools.partial(randomization_fn, rng=rng),
+        )
 
-    # test that the DomainRandomizationWrapper creates variability in env.step
-    state = jax.jit(env.step)(state, jp.zeros((256, env.action_size)))
-    self.assertEqual(state.data.qpos[:, 0].shape[0], 256)
-    self.assertEqual(np.unique(state.data.qpos[:, 0]).shape[0], 256)
+        # set the same key across the batch for env.reset so that only the
+        # randomization wrapper creates variability in the env.step
+        key = jp.zeros((256, 2), dtype=jp.uint32)
+        state = jax.jit(env.reset)(key)
+        self.assertEqual(state.data.qpos[:, 0].shape[0], 256)
+        self.assertEqual(np.unique(state.data.qpos[:, 0]).shape[0], 1)
+
+        # test that the DomainRandomizationWrapper creates variability in env.step
+        state = jax.jit(env.step)(state, jp.zeros((256, env.action_size)))
+        self.assertEqual(state.data.qpos[:, 0].shape[0], 256)
+        self.assertEqual(np.unique(state.data.qpos[:, 0]).shape[0], 256)
 
 
-if __name__ == '__main__':
-  absltest.main()
+if __name__ == "__main__":
+    absltest.main()

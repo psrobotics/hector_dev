@@ -7,6 +7,59 @@ from mujoco_playground._src import gait
 from mujoco_playground._src import mjx_env
 from mujoco_playground._src.collision import geoms_colliding
 
+from dataclasses import dataclass
+from typing import Callable, List, Dict, Any
+import jax
+import jax.numpy as jp
+
+# Import the reward functions from the same file or from rewards.py
+from . import rewards  # Use this if reward functions are in rewards.py
+
+
+@dataclass
+class RewardTerm:
+    """A container for a single reward component."""
+
+    name: str
+    scale: float
+    func: Callable[..., jax.Array]
+
+
+class RewardManager:
+    """Calculates total reward by summing dynamically configured terms."""
+
+    def __init__(self, reward_config: Dict[str, Any]):
+        self.reward_terms: List[RewardTerm] = []
+        reward_scales = reward_config.get("scales", {})
+
+        for name, scale in reward_scales.items():
+            if scale != 0.0:
+                # Dynamically get the function from the 'rewards' module by its name
+                reward_func = getattr(rewards, name, None)
+                if reward_func:
+                    self.reward_terms.append(
+                        RewardTerm(name=name, scale=scale, func=reward_func)
+                    )
+                else:
+                    print(
+                        f"Warning: Reward function '{name}' not found in rewards module."
+                    )
+
+    def calculate_rewards(
+        self, context: Dict[str, Any]
+    ) -> tuple[jp.Array, Dict[str, jp.Array]]:
+        """Calculates the total scaled reward and a dictionary of unscaled terms."""
+        total_reward = 0.0
+        reward_dict = {}
+
+        for term in self.reward_terms:
+            # Reward functions with negative scales in config are costs
+            unscaled_reward = term.func(context)
+            total_reward += term.scale * unscaled_reward
+            reward_dict[term.name] = unscaled_reward
+
+        return total_reward, reward_dict
+
 
 # Tracking rewards.
 def _reward_tracking_lin_vel(self, context: Dict[str, Any]) -> jax.Array:

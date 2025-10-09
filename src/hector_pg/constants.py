@@ -4,23 +4,22 @@ from etils import epath
 from pathlib import Path
 import os
 
-#from mujoco_playground._src import mjx_env
+# from mujoco_playground._src import mjx_env
 
 ROOT_PATH = epath.Path(__file__).parent
 EXTERNAL_DEPS_PATH = epath.Path(__file__).parent.parent / "external_deps"
 
-FEET_ONLY_FLAT_TERRAIN_XML = (
-    ROOT_PATH / "xmls" / "scene_mjx_feetonly_flat_terrain.xml"
-)
+FEET_ONLY_FLAT_TERRAIN_XML = ROOT_PATH / "xmls" / "scene_mjx_feetonly_flat_terrain.xml"
 FEET_ONLY_ROUGH_TERRAIN_XML = (
     ROOT_PATH / "xmls" / "scene_mjx_feetonly_rough_terrain.xml"
 )
 
+
 def task_to_xml(task_name: str) -> epath.Path:
-  return {
-      "flat_terrain": FEET_ONLY_FLAT_TERRAIN_XML,
-      "rough_terrain": FEET_ONLY_ROUGH_TERRAIN_XML,
-  }[task_name]
+    return {
+        "flat_terrain": FEET_ONLY_FLAT_TERRAIN_XML,
+        "rough_terrain": FEET_ONLY_ROUGH_TERRAIN_XML,
+    }[task_name]
 
 
 FEET_SITES = [
@@ -35,6 +34,9 @@ RIGHT_FEET_GEOMS = [
     "r_toe_contact",
 ]
 FEET_GEOMS = LEFT_FEET_GEOMS + RIGHT_FEET_GEOMS
+
+HIP_J_NAMES = ["hip_yaw", "hip_roll"]
+KNEE_J_NAMES = ["knee"]
 
 # l_toe_pos and r_toe_pos
 FEET_POS_SENSOR = [f"{site}_pos" for site in FEET_SITES]

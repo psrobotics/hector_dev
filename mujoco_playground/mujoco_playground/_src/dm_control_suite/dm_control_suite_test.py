@@ -22,20 +22,20 @@ from mujoco_playground._src import dm_control_suite
 
 
 class TestSuite(parameterized.TestCase):
-  """Tests for the DM Control Suite."""
+    """Tests for the DM Control Suite."""
 
-  @parameterized.named_parameters(
-      {"testcase_name": f"test_can_create_{env_name}", "env_name": env_name}
-      for env_name in dm_control_suite.ALL_ENVS
-  )
-  def test_can_create_all_environments(self, env_name: str) -> None:
-    env = dm_control_suite.load(env_name)
-    state = jax.jit(env.reset)(jax.random.PRNGKey(42))
-    state = jax.jit(env.step)(state, jp.zeros(env.action_size))
-    self.assertIsNotNone(state)
-    self.assertEqual(state.obs.shape[0], env.observation_size)
-    self.assertFalse(jp.isnan(state.data.qpos).any())
+    @parameterized.named_parameters(
+        {"testcase_name": f"test_can_create_{env_name}", "env_name": env_name}
+        for env_name in dm_control_suite.ALL_ENVS
+    )
+    def test_can_create_all_environments(self, env_name: str) -> None:
+        env = dm_control_suite.load(env_name)
+        state = jax.jit(env.reset)(jax.random.PRNGKey(42))
+        state = jax.jit(env.step)(state, jp.zeros(env.action_size))
+        self.assertIsNotNone(state)
+        self.assertEqual(state.obs.shape[0], env.observation_size)
+        self.assertFalse(jp.isnan(state.data.qpos).any())
 
 
 if __name__ == "__main__":
-  absltest.main()
+    absltest.main()

@@ -23,9 +23,9 @@ FEET_ONLY_FLAT_TERRAIN_XML = XML_DIR / "scene_mjx_feetonly_flat_terrain.xml"
 
 
 def task_to_xml(task_name: str) -> epath.Path:
-  return {
-      "flat_terrain": FEET_ONLY_FLAT_TERRAIN_XML,
-  }[task_name]
+    return {
+        "flat_terrain": FEET_ONLY_FLAT_TERRAIN_XML,
+    }[task_name]
 
 
 FEET_SITES = [

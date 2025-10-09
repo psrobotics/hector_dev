@@ -27,75 +27,75 @@ import seaborn as sn
 
 # Custom function for scientific notation formatting
 def scientific_notation_formatter(x, _):
-  if x == 0:
-    return "0"
-  else:
-    return f"{x:.1e}"
+    if x == 0:
+        return "0"
+    else:
+        return f"{x:.1e}"
 
 
 # Format the y-axis as powers of 2
 def log2_to_exp_formatter(x, _):
-  return f"${{2^{{{int(x)}}}}}$"
+    return f"${{2^{{{int(x)}}}}}$"
 
 
 # Custom formatter function
 def format_power_of_10(num, _):
-  # num = 2**num
-  """Format a number into scientific notation as, for example, 2.3 x 10^4."""
-  if num == 0:
-    return "0"
-  exponent = int(np.floor(np.log10(abs(num))))
-  base = num / 10**exponent
+    # num = 2**num
+    """Format a number into scientific notation as, for example, 2.3 x 10^4."""
+    if num == 0:
+        return "0"
+    exponent = int(np.floor(np.log10(abs(num))))
+    base = num / 10**exponent
 
-  # Decide whether to show the base separately or just 10^exponent
-  if abs(base - 1) < 1e-10:
-    # If base is very close to 1, show only 10^exponent
-    return r"$10^{%d}$" % exponent
-  else:
-    # Otherwise, show something like 2.3 x 10^4
-    return f"${base:.1f}\times 10^{{{exponent}}}$"
+    # Decide whether to show the base separately or just 10^exponent
+    if abs(base - 1) < 1e-10:
+        # If base is very close to 1, show only 10^exponent
+        return r"$10^{%d}$" % exponent
+    else:
+        # Otherwise, show something like 2.3 x 10^4
+        return f"${base:.1f}\times 10^{{{exponent}}}$"
 
 
 def load_maniskill_result(name, state=False):
-  file_name = name
-  if state:
-    file_name += "_state"
-  file_path = f"data/maniskill3/{file_name}.csv"
-  df = pd.read_csv(file_path)
-  df_filtered = df[
-      (df["gpu_type"] == "NVIDIA GeForce RTX 4090")
-      & (df["env_id"] == "CartpoleBalanceBenchmark-v1")
-  ]
-  if not state:
-    df_filtered = df_filtered[
-        (df_filtered["num_cameras"] == 1) & (df_filtered["obs_mode"] == "rgb")
+    file_name = name
+    if state:
+        file_name += "_state"
+    file_path = f"data/maniskill3/{file_name}.csv"
+    df = pd.read_csv(file_path)
+    df_filtered = df[
+        (df["gpu_type"] == "NVIDIA GeForce RTX 4090")
+        & (df["env_id"] == "CartpoleBalanceBenchmark-v1")
     ]
+    if not state:
+        df_filtered = df_filtered[
+            (df_filtered["num_cameras"] == 1) & (df_filtered["obs_mode"] == "rgb")
+        ]
 
-  df_dict = {
-      "num_envs": df_filtered["num_envs"],
-      "fps": df_filtered["env.step/fps"],
-      "source_file": name,
-  }
-  if not state:
-    df_dict["camera_size"] = df_filtered["camera_width"]
-  return pd.DataFrame(df_dict)
+    df_dict = {
+        "num_envs": df_filtered["num_envs"],
+        "fps": df_filtered["env.step/fps"],
+        "source_file": name,
+    }
+    if not state:
+        df_dict["camera_size"] = df_filtered["camera_width"]
+    return pd.DataFrame(df_dict)
 
 
 def load_madrona_mjx_result(name, state=False):
-  file_path = f"data/{name}.csv"
-  df = pd.read_csv(file_path)
-  df = df[df["bottleneck_mode"] == False]  # benchmarking only.
-  if state:
-    df = df[df["img_size"] == 0]
-  else:
-    df = df[df["img_size"] > 0]
-  df_dict = {
-      "num_envs": df["num_envs"],
-      "fps": df["fps"],
-      "source_file": name,
-      "camera_size": df["img_size"],
-  }
-  return pd.DataFrame(df_dict)
+    file_path = f"data/{name}.csv"
+    df = pd.read_csv(file_path)
+    df = df[df["bottleneck_mode"] == False]  # benchmarking only.
+    if state:
+        df = df[df["img_size"] == 0]
+    else:
+        df = df[df["img_size"] > 0]
+    df_dict = {
+        "num_envs": df["num_envs"],
+        "fps": df["fps"],
+        "source_file": name,
+        "camera_size": df["img_size"],
+    }
+    return pd.DataFrame(df_dict)
 
 
 # --- Vision ---
@@ -104,9 +104,7 @@ df1 = load_maniskill_result("isaac_lab")
 df2 = load_maniskill_result("maniskill")
 df3 = load_madrona_mjx_result("madrona_mjx")
 df3 = (
-    df3.groupby(["num_envs", "camera_size", "source_file"])["fps"]
-    .mean()
-    .reset_index()
+    df3.groupby(["num_envs", "camera_size", "source_file"])["fps"].mean().reset_index()
 )
 
 # Concatenate everything
@@ -141,28 +139,28 @@ tableau10 = [(r / 255, g / 255, b / 255) for r, g, b in tableau10]
 def configure_plotting_sn_params(
     sn, SCALE=8, HEIGHT_SCALE=0.8, use_autolayout=True, font_size=22
 ):
-  pd.set_option("mode.chained_assignment", None)
-  sn.set(
-      rc={
-          "figure.figsize": (SCALE, int(HEIGHT_SCALE * SCALE)),
-          "figure.autolayout": use_autolayout,
-      }
-  )
-  sn.set(font_scale=1.5)
-  sn.set_style(
-      "whitegrid",
-      {
-          "font.family": "serif",
-          "font.serif": "Times New Roman",
-          "pdf.fonttype": 42,
-          "ps.fonttype": 42,
-          "font.size": font_size,
-          "grid.linewidth": 0.5,
-          "grid.color": "#EEEEEE",
-      },
-  )
-  sn.color_palette("colorblind")
-  return sn
+    pd.set_option("mode.chained_assignment", None)
+    sn.set(
+        rc={
+            "figure.figsize": (SCALE, int(HEIGHT_SCALE * SCALE)),
+            "figure.autolayout": use_autolayout,
+        }
+    )
+    sn.set(font_scale=1.5)
+    sn.set_style(
+        "whitegrid",
+        {
+            "font.family": "serif",
+            "font.serif": "Times New Roman",
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
+            "font.size": font_size,
+            "grid.linewidth": 0.5,
+            "grid.color": "#EEEEEE",
+        },
+    )
+    sn.color_palette("colorblind")
+    return sn
 
 
 sn = configure_plotting_sn_params(sn, font_size=24)
@@ -177,9 +175,7 @@ simulators = ["maniskill", "isaac_lab", "madrona_mjx"]
 # 1) Prepare the STATE-BASED data
 # ---------------------------
 num_envs_to_plot_state = [1024, 2048, 4096, 8192, 16384]
-df_state_filtered = df_state[
-    df_state["num_envs"].isin(num_envs_to_plot_state)
-].copy()
+df_state_filtered = df_state[df_state["num_envs"].isin(num_envs_to_plot_state)].copy()
 
 # Create a dummy camera_size = 0
 df_state_filtered["camera_size"] = 0
@@ -199,9 +195,7 @@ df_seaborn_state = df_state_filtered.melt(
 # ---------------------------
 camera_sizes = [80, 128, 256]  # Drop 224
 num_envs_to_plot_pixels = [128, 256, 512, 1024]  # Or whatever you prefer
-df_filtered = df_pixels[
-    df_pixels["num_envs"].isin(num_envs_to_plot_pixels)
-].copy()
+df_filtered = df_pixels[df_pixels["num_envs"].isin(num_envs_to_plot_pixels)].copy()
 df_filtered = df_filtered[df_filtered["camera_size"].isin(camera_sizes)].copy()
 
 df_filtered["camera_size"] = df_filtered["camera_size"].astype(int)
@@ -243,26 +237,26 @@ ax0.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
 # Subplots 2, 3, 4: 80x80, 128x128, and 256x256 Render #
 #######################################################
 for i, cs in enumerate(camera_sizes):
-  ax = axes[i + 1]  # i=0 -> axes[1], i=1 -> axes[2], i=2 -> axes[3]
-  data_subset = df_seaborn_pixels[df_seaborn_pixels["camera_size"] == cs]
+    ax = axes[i + 1]  # i=0 -> axes[1], i=1 -> axes[2], i=2 -> axes[3]
+    data_subset = df_seaborn_pixels[df_seaborn_pixels["camera_size"] == cs]
 
-  sn.barplot(
-      data=data_subset,
-      x="num_envs",
-      y="value",
-      hue="source_file",
-      hue_order=simulators,
-      palette=sim_colors,
-      errorbar=None,
-      ax=ax,
-  )
-  ax.set_title(f"{cs}×{cs} Render")
-  ax.set_xlabel("Batch Size")
-  ax.set_ylabel("FPS")
-  ax.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
-  # If you only want a single legend overall, remove the per-axes legend and
-  #  place one globally at the end
-  ax.legend().remove()
+    sn.barplot(
+        data=data_subset,
+        x="num_envs",
+        y="value",
+        hue="source_file",
+        hue_order=simulators,
+        palette=sim_colors,
+        errorbar=None,
+        ax=ax,
+    )
+    ax.set_title(f"{cs}×{cs} Render")
+    ax.set_xlabel("Batch Size")
+    ax.set_ylabel("FPS")
+    ax.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
+    # If you only want a single legend overall, remove the per-axes legend and
+    #  place one globally at the end
+    ax.legend().remove()
 
 # Optionally add a single legend for the entire figure
 handles, labels = ax0.get_legend_handles_labels()
@@ -271,148 +265,140 @@ handles, labels = ax0.get_legend_handles_labels()
 ax0.legend().set_title("")
 
 fig.tight_layout()
-plt.savefig(
-    "figures/cartpole_benchmark_combined.png", dpi=600, bbox_inches="tight"
-)
+plt.savefig("figures/cartpole_benchmark_combined.png", dpi=600, bbox_inches="tight")
 
 #### PIXELS FPS ####
 
 for full_plot in [True, False]:
-  camera_sizes_to_plot = [80, 128, 224, 256] if full_plot else [80, 256]
-  num_envs_to_plot = [128, 256, 512, 1024]
+    camera_sizes_to_plot = [80, 128, 224, 256] if full_plot else [80, 256]
+    num_envs_to_plot = [128, 256, 512, 1024]
 
-  # Suppose df_pixels is your original DataFrame
-  # Filter df_pixels to keep only the desired num_envs
-  df_filtered = df_pixels[df_pixels["num_envs"].isin(num_envs_to_plot)].copy()
-  df_filtered = df_filtered[
-      df_filtered["camera_size"].isin(camera_sizes_to_plot)
-  ]
-  # Convert the camera_size column to ints.
-  df_filtered["camera_size"] = df_filtered["camera_size"].astype(int)
+    # Suppose df_pixels is your original DataFrame
+    # Filter df_pixels to keep only the desired num_envs
+    df_filtered = df_pixels[df_pixels["num_envs"].isin(num_envs_to_plot)].copy()
+    df_filtered = df_filtered[df_filtered["camera_size"].isin(camera_sizes_to_plot)]
+    # Convert the camera_size column to ints.
+    df_filtered["camera_size"] = df_filtered["camera_size"].astype(int)
 
-  df_seaborn = df_filtered.melt(
-      id_vars=["num_envs", "camera_size", "source_file"],
-      value_vars=["fps"],
-      var_name="metric",
-      value_name="value",
-  )
-
-  # df_seaborn = df_filtered
-  sim_colors = tableau10[:3]
-
-  # Use seaborn for figure creation
-  g = sn.FacetGrid(
-      df_seaborn,
-      col="camera_size",
-      col_wrap=2,
-      height=5,
-      sharex=False,
-      sharey=False,
-      margin_titles=True,
-  )
-
-  simulators = ["maniskill", "isaac_lab", "madrona_mjx"]
-
-  def plot_bars(data, **kwargs):
-    sn.barplot(
-        data=data,
-        dodge=True,
-        x="num_envs",
-        y="value",
-        hue="source_file",
-        hue_order=simulators,
-        palette=sim_colors,
-        errorbar=None,
-        **kwargs,
+    df_seaborn = df_filtered.melt(
+        id_vars=["num_envs", "camera_size", "source_file"],
+        value_vars=["fps"],
+        var_name="metric",
+        value_name="value",
     )
 
-  g.map_dataframe(plot_bars)
+    # df_seaborn = df_filtered
+    sim_colors = tableau10[:3]
 
-  # Format the y axes of each subplot.
-  for i, ax in enumerate(g.axes.flat):
-    ax.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
-    if i == 0:
-      # Set legend.
-      ax.legend(title="")
+    # Use seaborn for figure creation
+    g = sn.FacetGrid(
+        df_seaborn,
+        col="camera_size",
+        col_wrap=2,
+        height=5,
+        sharex=False,
+        sharey=False,
+        margin_titles=True,
+    )
 
-  # Customize titles
-  g.set_titles("{col_name}x{col_name} Render")
-  g.set_axis_labels("Batch Size", "FPS")
-  # g.add_legend()
-  fname = "cartpole_benchmark"
-  if full_plot:
-    fname += "_full"
-  plt.savefig(f"figures/{fname}.png", dpi=600)
+    simulators = ["maniskill", "isaac_lab", "madrona_mjx"]
+
+    def plot_bars(data, **kwargs):
+        sn.barplot(
+            data=data,
+            dodge=True,
+            x="num_envs",
+            y="value",
+            hue="source_file",
+            hue_order=simulators,
+            palette=sim_colors,
+            errorbar=None,
+            **kwargs,
+        )
+
+    g.map_dataframe(plot_bars)
+
+    # Format the y axes of each subplot.
+    for i, ax in enumerate(g.axes.flat):
+        ax.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
+        if i == 0:
+            # Set legend.
+            ax.legend(title="")
+
+    # Customize titles
+    g.set_titles("{col_name}x{col_name} Render")
+    g.set_axis_labels("Batch Size", "FPS")
+    # g.add_legend()
+    fname = "cartpole_benchmark"
+    if full_plot:
+        fname += "_full"
+    plt.savefig(f"figures/{fname}.png", dpi=600)
 
 #### STATE FPS ####
 for _ in [None]:
-  sim_colors = tableau10[:3]
-  simulators = ["maniskill", "isaac_lab", "madrona_mjx"]
+    sim_colors = tableau10[:3]
+    simulators = ["maniskill", "isaac_lab", "madrona_mjx"]
 
-  num_envs_to_plot = [64, 256, 1024, 4096, 16384]
-  df_state_filtered = df_state[
-      df_state["num_envs"].isin(num_envs_to_plot)
-  ].copy()
+    num_envs_to_plot = [64, 256, 1024, 4096, 16384]
+    df_state_filtered = df_state[df_state["num_envs"].isin(num_envs_to_plot)].copy()
 
-  # Dummy column for camera size.
-  df_state_filtered["camera_size"] = 0
-  df_seaborn = df_state_filtered.melt(
-      id_vars=["num_envs", "camera_size", "source_file"],
-      value_vars=["fps"],
-      var_name="metric",
-      value_name="value",
-  )
-
-  # Scale for better visualization
-
-  df_seaborn["value"] = np.log2(df_seaborn["value"])
-
-  # Use seaborn for figure creation
-  g = sn.FacetGrid(
-      df_seaborn,
-      col="camera_size",
-      height=5,
-      sharex=False,
-      sharey=False,
-      margin_titles=False,
-  )
-
-  def plot_bars(data, **kwargs):
-    sn.barplot(
-        data=data,
-        dodge=True,
-        x="num_envs",
-        y="value",
-        hue="source_file",
-        hue_order=simulators,
-        palette=sim_colors,
-        errorbar=None,
-        **kwargs,
+    # Dummy column for camera size.
+    df_state_filtered["camera_size"] = 0
+    df_seaborn = df_state_filtered.melt(
+        id_vars=["num_envs", "camera_size", "source_file"],
+        value_vars=["fps"],
+        var_name="metric",
+        value_name="value",
     )
 
-  # set ylimits
-  g.set(ylim=(14, 25))
-  g.map_dataframe(plot_bars)
+    # Scale for better visualization
 
-  # Custom function for formatting y-axis ticks
-  def log2_to_exp_formatter(x, pos):
-    return f"${{{2**int(x)}}}$"
+    df_seaborn["value"] = np.log2(df_seaborn["value"])
 
-  # Apply custom y-axis formatting for all subplots
-  for ax in g.axes.flat:
-    ax.yaxis.set_major_formatter(FuncFormatter(log2_to_exp_formatter))
-    ax.set_xticklabels(
-        ax.get_xticklabels(), rotation=45, ha="right"
-    )  # Slant x-axis labels
+    # Use seaborn for figure creation
+    g = sn.FacetGrid(
+        df_seaborn,
+        col="camera_size",
+        height=5,
+        sharex=False,
+        sharey=False,
+        margin_titles=False,
+    )
 
-  # Customize titles
-  g.set_titles("")
-  g.set_axis_labels("Batch Size", "FPS")
-  g.add_legend()
+    def plot_bars(data, **kwargs):
+        sn.barplot(
+            data=data,
+            dodge=True,
+            x="num_envs",
+            y="value",
+            hue="source_file",
+            hue_order=simulators,
+            palette=sim_colors,
+            errorbar=None,
+            **kwargs,
+        )
 
-  plt.savefig(
-      f"figures/cartpole_benchmark_state.png", dpi=600, bbox_inches="tight"
-  )
+    # set ylimits
+    g.set(ylim=(14, 25))
+    g.map_dataframe(plot_bars)
+
+    # Custom function for formatting y-axis ticks
+    def log2_to_exp_formatter(x, pos):
+        return f"${{{2**int(x)}}}$"
+
+    # Apply custom y-axis formatting for all subplots
+    for ax in g.axes.flat:
+        ax.yaxis.set_major_formatter(FuncFormatter(log2_to_exp_formatter))
+        ax.set_xticklabels(
+            ax.get_xticklabels(), rotation=45, ha="right"
+        )  # Slant x-axis labels
+
+    # Customize titles
+    g.set_titles("")
+    g.set_axis_labels("Batch Size", "FPS")
+    g.add_legend()
+
+    plt.savefig(f"figures/cartpole_benchmark_state.png", dpi=600, bbox_inches="tight")
 
 #### Stacked Plots ####
 
@@ -422,131 +408,131 @@ for _ in [None]:
 
 
 for full_plot in [True, False]:
-  camera_sizes_to_plot = [80, 128, 224, 256] if full_plot else [80, 256]
-  num_envs_to_plot = [128, 256, 512, 1024]
+    camera_sizes_to_plot = [80, 128, 224, 256] if full_plot else [80, 256]
+    num_envs_to_plot = [128, 256, 512, 1024]
 
-  df_merged = df_pixels.merge(
-      df_state[["num_envs", "source_file", "fps"]].rename(
-          columns={"fps": "fps_state"}
-      ),
-      on=["num_envs", "source_file"],
-      how="left",
-  )
-
-  # Compute time-per-step (tps) for total, state, and render
-  df_merged["tps_total"] = 1.0 / df_merged["fps"]
-  df_merged["tps_state"] = 1.0 / df_merged["fps_state"]
-  # df_merged["tps_render"] = df_merged["tps_total"] - df_merged["tps_state"]
-
-  # Filter to only the desired environments and melt data for Seaborn
-  df_seaborn = df_merged[df_merged["num_envs"].isin(num_envs_to_plot)].copy()
-  df_seaborn = df_seaborn[df_seaborn["camera_size"].isin(camera_sizes_to_plot)]
-  # Melt into long format for Seaborn
-  df_seaborn = df_seaborn.melt(
-      id_vars=["num_envs", "camera_size", "source_file"],
-      value_vars=["tps_state", "tps_total"],
-      var_name="time_component",
-      value_name="time_per_step",
-  )
-
-  # Convert the camera_size column to ints.
-  df_seaborn["camera_size"] = df_seaborn["camera_size"].astype(int)
-
-  # Add a column for bar stack order (state on bottom, render on top).
-  # Seaborn doesn't support having bars on top of eachother so we plot total
-  #  in back and state on top of it.
-  df_seaborn["stack_order"] = df_seaborn["time_component"].map(
-      {"tps_state": 0, "tps_total": 1}
-  )
-
-  def plot_stacked_bars_seaborn(data, camera_sizes, simulators, sim_colors):
-    """
-    Generate a FacetGrid of stacked bar charts comparing rendering and state
-     times.
-    """
-    # Configure Seaborn
-    global sn
-    # sn.set_theme(style="whitegrid", font_scale=1.2)
-
-    # Initialize a FacetGrid to create a subplot for each camera_size
-    g = sn.FacetGrid(
-        data,
-        col="camera_size",
-        col_wrap=2,
-        height=5,
-        sharex=False,
-        sharey=True,
-        margin_titles=True,
+    df_merged = df_pixels.merge(
+        df_state[["num_envs", "source_file", "fps"]].rename(
+            columns={"fps": "fps_state"}
+        ),
+        on=["num_envs", "source_file"],
+        how="left",
     )
 
-    # Plot stacked bars
-    def plot_bars(data, **kwargs):
-      # Plot the "state" bars
-      sn.barplot(
-          data=data[data["stack_order"] == 0],
-          x="num_envs",
-          y="time_per_step",
-          hue="source_file",
-          hue_order=simulators,
-          palette=sim_colors,
-          errorbar=None,
-          dodge=True,
-          **kwargs,
-      )
-      # Overlay the "render" bars on top of "state"
-      sn.barplot(
-          data=data[data["stack_order"] == 1],
-          x="num_envs",
-          y="time_per_step",
-          hue="source_file",
-          hue_order=simulators,
-          palette=sim_colors,
-          errorbar=None,
-          dodge=True,
-          alpha=0.6,
-          **kwargs,
-      )
+    # Compute time-per-step (tps) for total, state, and render
+    df_merged["tps_total"] = 1.0 / df_merged["fps"]
+    df_merged["tps_state"] = 1.0 / df_merged["fps_state"]
+    # df_merged["tps_render"] = df_merged["tps_total"] - df_merged["tps_state"]
 
-    g.map_dataframe(plot_bars)
+    # Filter to only the desired environments and melt data for Seaborn
+    df_seaborn = df_merged[df_merged["num_envs"].isin(num_envs_to_plot)].copy()
+    df_seaborn = df_seaborn[df_seaborn["camera_size"].isin(camera_sizes_to_plot)]
+    # Melt into long format for Seaborn
+    df_seaborn = df_seaborn.melt(
+        id_vars=["num_envs", "camera_size", "source_file"],
+        value_vars=["tps_state", "tps_total"],
+        var_name="time_component",
+        value_name="time_per_step",
+    )
 
-    # Add titles and adjust layout
-    g.set_titles("{col_name}x{col_name} Render")
-    g.set_axis_labels("Batch Size", "Time per Step (s)")
-    # g.add_legend()
+    # Convert the camera_size column to ints.
+    df_seaborn["camera_size"] = df_seaborn["camera_size"].astype(int)
 
-    return g
+    # Add a column for bar stack order (state on bottom, render on top).
+    # Seaborn doesn't support having bars on top of eachother so we plot total
+    #  in back and state on top of it.
+    df_seaborn["stack_order"] = df_seaborn["time_component"].map(
+        {"tps_state": 0, "tps_total": 1}
+    )
 
-  # ------------------------
-  # Define Parameters & Plot
-  # ------------------------
+    def plot_stacked_bars_seaborn(data, camera_sizes, simulators, sim_colors):
+        """
+        Generate a FacetGrid of stacked bar charts comparing rendering and state
+         times.
+        """
+        # Configure Seaborn
+        global sn
+        # sn.set_theme(style="whitegrid", font_scale=1.2)
 
-  # Simulators and their colors
-  ordered_sources = ["maniskill", "isaac_lab", "madrona_mjx"]
-  # sim_colors = sns.color_palette("tab10", n_colors=len(ordered_sources))
-  sim_colors = tableau10[:3]
+        # Initialize a FacetGrid to create a subplot for each camera_size
+        g = sn.FacetGrid(
+            data,
+            col="camera_size",
+            col_wrap=2,
+            height=5,
+            sharex=False,
+            sharey=True,
+            margin_titles=True,
+        )
 
-  # Call the plotting function
-  g = plot_stacked_bars_seaborn(
-      df_seaborn, camera_sizes_to_plot, ordered_sources, sim_colors
-  )
+        # Plot stacked bars
+        def plot_bars(data, **kwargs):
+            # Plot the "state" bars
+            sn.barplot(
+                data=data[data["stack_order"] == 0],
+                x="num_envs",
+                y="time_per_step",
+                hue="source_file",
+                hue_order=simulators,
+                palette=sim_colors,
+                errorbar=None,
+                dodge=True,
+                **kwargs,
+            )
+            # Overlay the "render" bars on top of "state"
+            sn.barplot(
+                data=data[data["stack_order"] == 1],
+                x="num_envs",
+                y="time_per_step",
+                hue="source_file",
+                hue_order=simulators,
+                palette=sim_colors,
+                errorbar=None,
+                dodge=True,
+                alpha=0.6,
+                **kwargs,
+            )
 
-  # Apply custom formatter to y-axis
-  for i, ax in enumerate(g.axes.flat):
-    # Add a legend to ax 0
-    if i == 0:
-      # ax.legend(title="")
-      # Make a legend but only keep the first 3 elements of it
-      handles, labels = ax.get_legend_handles_labels()
-      ax.legend(handles[:3], labels[:3])
-    # Set the x axis name
-    ax.set_xlabel("Batch Size")
-    ax.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
+        g.map_dataframe(plot_bars)
 
-  # Save or show the plot
-  fname = "cartpole_benchmark_stacked"
-  if full_plot:
-    fname += "_full"
-  plt.savefig(f"figures/{fname}.png", dpi=600, bbox_inches="tight")
+        # Add titles and adjust layout
+        g.set_titles("{col_name}x{col_name} Render")
+        g.set_axis_labels("Batch Size", "Time per Step (s)")
+        # g.add_legend()
+
+        return g
+
+    # ------------------------
+    # Define Parameters & Plot
+    # ------------------------
+
+    # Simulators and their colors
+    ordered_sources = ["maniskill", "isaac_lab", "madrona_mjx"]
+    # sim_colors = sns.color_palette("tab10", n_colors=len(ordered_sources))
+    sim_colors = tableau10[:3]
+
+    # Call the plotting function
+    g = plot_stacked_bars_seaborn(
+        df_seaborn, camera_sizes_to_plot, ordered_sources, sim_colors
+    )
+
+    # Apply custom formatter to y-axis
+    for i, ax in enumerate(g.axes.flat):
+        # Add a legend to ax 0
+        if i == 0:
+            # ax.legend(title="")
+            # Make a legend but only keep the first 3 elements of it
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles[:3], labels[:3])
+        # Set the x axis name
+        ax.set_xlabel("Batch Size")
+        ax.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
+
+    # Save or show the plot
+    fname = "cartpole_benchmark_stacked"
+    if full_plot:
+        fname += "_full"
+    plt.savefig(f"figures/{fname}.png", dpi=600, bbox_inches="tight")
 
 ##########################
 #### Main Figure Plot ####
@@ -575,12 +561,14 @@ df = df[(df["bottleneck_mode"] == True) & (df["measurement_mode"] == 1)]
 df = df[df["num_envs"] == 1024]
 
 # Rename columns for convenience
-df = pd.DataFrame({
-    "num_envs": df["num_envs"],
-    "fps": df["fps"],
-    "env_name": df["env_name"],
-    "camera_size": df["img_size"],
-})
+df = pd.DataFrame(
+    {
+        "num_envs": df["num_envs"],
+        "fps": df["fps"],
+        "env_name": df["env_name"],
+        "camera_size": df["img_size"],
+    }
+)
 
 # Keep only the environment names of interest
 envs = ["CartpoleBalance", "PandaPickCubeCartesian"]
@@ -614,35 +602,35 @@ g = sn.FacetGrid(
 
 
 def float_to_sci_str(value: float, precision: int = 1) -> str:
-  """
-  Convert a float to scientific notation with a trimmed exponent.
-  Example: 44000.0 -> '4.4e4'
+    """
+    Convert a float to scientific notation with a trimmed exponent.
+    Example: 44000.0 -> '4.4e4'
 
-  :param value: The float to format
-  :param precision: Number of digits after the decimal point (default=1)
-  :return: A string representation in scientific notation
-  """
-  # Format with the given precision: e.g. "4.4e+04"
-  sci = f"{value:.{precision}e}"
-  # Split into base and exponent: ["4.4", "+04"]
-  base, exp_str = sci.split("e")
-  # Convert exponent to integer to remove '+0...' or '-0...'
-  exponent = int(exp_str)
-  # Rebuild the string with the simplified exponent
-  return f"{base}e{exponent}"
+    :param value: The float to format
+    :param precision: Number of digits after the decimal point (default=1)
+    :return: A string representation in scientific notation
+    """
+    # Format with the given precision: e.g. "4.4e+04"
+    sci = f"{value:.{precision}e}"
+    # Split into base and exponent: ["4.4", "+04"]
+    base, exp_str = sci.split("e")
+    # Convert exponent to integer to remove '+0...' or '-0...'
+    exponent = int(exp_str)
+    # Rebuild the string with the simplified exponent
+    return f"{base}e{exponent}"
 
 
 def plot_bars(data, **kwargs):
-  sn.barplot(
-      data=data,
-      x="camera_size",
-      y="value",
-      order=camera_sizes_to_plot,  # ensure order of x-axis
-      hue="env_name",
-      errorbar=None,
-      palette=tableau10[2:],
-      **kwargs,
-  )
+    sn.barplot(
+        data=data,
+        x="camera_size",
+        y="value",
+        order=camera_sizes_to_plot,  # ensure order of x-axis
+        hue="env_name",
+        errorbar=None,
+        palette=tableau10[2:],
+        **kwargs,
+    )
 
 
 # Map our function to each facet
@@ -660,10 +648,10 @@ g.map_dataframe(plot_bars)
 
 
 def scientific_notation_formatter(x, pos):
-  if x == 0:
-    return "0"
-  else:
-    return f"{x:.0e}"
+    if x == 0:
+        return "0"
+    else:
+        return f"{x:.0e}"
 
 
 # Format each subplot’s axis
@@ -673,11 +661,11 @@ ticks = [
 ]
 ylims = [4.1e5, 4.1e4]
 for i, ax in enumerate(g.axes.flat):
-  ax.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
-  # Set the y range.
-  ax.set_ylim(0, ylims[i])
-  ax.set_yticks(ticks[i])
-  ax.grid(color="gray", linestyle="--", linewidth=2, axis="y")
+    ax.yaxis.set_major_formatter(FuncFormatter(scientific_notation_formatter))
+    # Set the y range.
+    ax.set_ylim(0, ylims[i])
+    ax.set_yticks(ticks[i])
+    ax.grid(color="gray", linestyle="--", linewidth=2, axis="y")
 
 ax = g.axes[0]
 

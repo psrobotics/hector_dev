@@ -19,16 +19,14 @@ from etils import epath
 from mujoco_playground._src import mjx_env
 
 ROOT_PATH = mjx_env.ROOT_PATH / "locomotion" / "spot"
-FEET_ONLY_FLAT_TERRAIN_XML = (
-    ROOT_PATH / "xmls" / "scene_mjx_feetonly_flat_terrain.xml"
-)
+FEET_ONLY_FLAT_TERRAIN_XML = ROOT_PATH / "xmls" / "scene_mjx_feetonly_flat_terrain.xml"
 FULL_FLAT_TERRAIN_XML = ROOT_PATH / "xmls" / "scene_mjx_flat_terrain.xml"
 
 
 def task_to_xml(task_name: str) -> epath.Path:
-  return {
-      "flat_terrain": FEET_ONLY_FLAT_TERRAIN_XML,
-  }[task_name]
+    return {
+        "flat_terrain": FEET_ONLY_FLAT_TERRAIN_XML,
+    }[task_name]
 
 
 FEET_SITES = [

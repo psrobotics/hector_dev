@@ -25,49 +25,45 @@ from mujoco_playground._src import registry
 
 class RegistryTest(absltest.TestCase):
 
-  def test_new_env(self):
-    class DemoEnv:
+    def test_new_env(self):
+        class DemoEnv:
 
-      def __init__(self, config, config_overrides):
-        pass
+            def __init__(self, config, config_overrides):
+                pass
 
-    def demo_default_config() -> None:
-      return config_dict.ConfigDict()
+        def demo_default_config() -> None:
+            return config_dict.ConfigDict()
 
-    dm_control_suite.register_environment(
-        'DemoEnv', DemoEnv, demo_default_config
-    )
-    env = registry.load('DemoEnv')
-    self.assertIsInstance(env, DemoEnv)
-    config = registry.get_default_config('DemoEnv')
-    self.assertEqual(config, config_dict.ConfigDict())
+        dm_control_suite.register_environment("DemoEnv", DemoEnv, demo_default_config)
+        env = registry.load("DemoEnv")
+        self.assertIsInstance(env, DemoEnv)
+        config = registry.get_default_config("DemoEnv")
+        self.assertEqual(config, config_dict.ConfigDict())
 
-    manipulation.register_environment('DemoEnv', DemoEnv, demo_default_config)
-    env = registry.load('DemoEnv')
-    self.assertIsInstance(env, DemoEnv)
-    config = registry.get_default_config('DemoEnv')
-    self.assertEqual(config, config_dict.ConfigDict())
+        manipulation.register_environment("DemoEnv", DemoEnv, demo_default_config)
+        env = registry.load("DemoEnv")
+        self.assertIsInstance(env, DemoEnv)
+        config = registry.get_default_config("DemoEnv")
+        self.assertEqual(config, config_dict.ConfigDict())
 
-    locomotion.register_environment('DemoEnv', DemoEnv, demo_default_config)
-    env = registry.load('DemoEnv')
-    self.assertIsInstance(env, DemoEnv)
-    config = registry.get_default_config('DemoEnv')
-    self.assertEqual(config, config_dict.ConfigDict())
+        locomotion.register_environment("DemoEnv", DemoEnv, demo_default_config)
+        env = registry.load("DemoEnv")
+        self.assertIsInstance(env, DemoEnv)
+        config = registry.get_default_config("DemoEnv")
+        self.assertEqual(config, config_dict.ConfigDict())
 
-  def test_constants(self) -> None:
-    self.assertNotEmpty(dm_control_suite.ALL_ENVS)
-    self.assertNotEmpty(locomotion.ALL_ENVS)
-    self.assertNotEmpty(manipulation.ALL_ENVS)
-    self.assertNotEmpty(registry.ALL_ENVS)
-    self.assertEqual(
-        sorted(registry.ALL_ENVS),
-        sorted(
-            dm_control_suite.ALL_ENVS
-            + locomotion.ALL_ENVS
-            + manipulation.ALL_ENVS
-        ),
-    )
+    def test_constants(self) -> None:
+        self.assertNotEmpty(dm_control_suite.ALL_ENVS)
+        self.assertNotEmpty(locomotion.ALL_ENVS)
+        self.assertNotEmpty(manipulation.ALL_ENVS)
+        self.assertNotEmpty(registry.ALL_ENVS)
+        self.assertEqual(
+            sorted(registry.ALL_ENVS),
+            sorted(
+                dm_control_suite.ALL_ENVS + locomotion.ALL_ENVS + manipulation.ALL_ENVS
+            ),
+        )
 
 
-if __name__ == '__main__':
-  absltest.main()
+if __name__ == "__main__":
+    absltest.main()

@@ -22,8 +22,8 @@ _XML_PATH = mjx_env.ROOT_PATH / "dm_control_suite" / "xmls" / "common"
 
 
 def get_assets() -> Dict[str, bytes]:
-  assets = {}
-  for f in _XML_PATH.glob("*"):
-    if f.is_file():
-      assets[f.name] = f.read_bytes()
-  return assets
+    assets = {}
+    for f in _XML_PATH.glob("*"):
+        if f.is_file():
+            assets[f.name] = f.read_bytes()
+    return assets

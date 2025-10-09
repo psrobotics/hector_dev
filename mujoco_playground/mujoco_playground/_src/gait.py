@@ -33,19 +33,21 @@ import numpy as np
 def get_rz(
     phi: Union[jax.Array, float], swing_height: Union[jax.Array, float] = 0.08
 ) -> jax.Array:
-  def cubic_bezier_interpolation(y_start, y_end, x):
-    y_diff = y_end - y_start
-    bezier = x**3 + 3 * (x**2 * (1 - x))
-    return y_start + y_diff * bezier
+    def cubic_bezier_interpolation(y_start, y_end, x):
+        y_diff = y_end - y_start
+        bezier = x**3 + 3 * (x**2 * (1 - x))
+        return y_start + y_diff * bezier
 
-  x = (phi + jp.pi) / (2 * jp.pi)
-  stance = cubic_bezier_interpolation(0, swing_height, 2 * x)
-  swing = cubic_bezier_interpolation(swing_height, 0, 2 * x - 1)
-  return jp.where(x <= 0.5, stance, swing)
+    x = (phi + jp.pi) / (2 * jp.pi)
+    stance = cubic_bezier_interpolation(0, swing_height, 2 * x)
+    swing = cubic_bezier_interpolation(swing_height, 0, 2 * x - 1)
+    return jp.where(x <= 0.5, stance, swing)
 
 
 def get_rz_phase(
-    phi: Union[jax.Array, float], swing_height: Union[jax.Array, float] = 0.08, airtime: float = 0.5,
+    phi: Union[jax.Array, float],
+    swing_height: Union[jax.Array, float] = 0.08,
+    airtime: float = 0.5,
 ) -> jax.Array:
     def cubic_bezier_interpolation(y0, y1, x):
         dy = y1 - y0
@@ -55,13 +57,19 @@ def get_rz_phase(
     x = (phi + np.pi) / (2 * np.pi)
     stance = 0.0
     k_swing = 2.0 / airtime
-    mid_swing = 0.5 + 0.5*(1.0-airtime)
-    swing_up = cubic_bezier_interpolation(0.0, swing_height, k_swing*(x+airtime-1.0))
-    swing_down  = cubic_bezier_interpolation(swing_height, 0.0, k_swing*(x-mid_swing))
-    height = jp.where(x <= (1.0-airtime), stance, jp.where(x<=mid_swing, swing_up, swing_down))
+    mid_swing = 0.5 + 0.5 * (1.0 - airtime)
+    swing_up = cubic_bezier_interpolation(
+        0.0, swing_height, k_swing * (x + airtime - 1.0)
+    )
+    swing_down = cubic_bezier_interpolation(
+        swing_height, 0.0, k_swing * (x - mid_swing)
+    )
+    height = jp.where(
+        x <= (1.0 - airtime), stance, jp.where(x <= mid_swing, swing_up, swing_down)
+    )
     return height
-  
-  
+
+
 # Foot order:"FR", "FL", "RR", "RL".
 GAIT_PHASES = {
     # trot (diagonals together).
@@ -86,36 +94,36 @@ def draw_joystick_command(
     radius=0.02,
     scl=1.0,
 ):
-  if rgba is None:
-    rgba = [0.2, 0.2, 0.6, 0.3]
-  scn.ngeom += 1
-  scn.geoms[scn.ngeom - 1].category = mujoco.mjtCatBit.mjCAT_DECOR
+    if rgba is None:
+        rgba = [0.2, 0.2, 0.6, 0.3]
+    scn.ngeom += 1
+    scn.geoms[scn.ngeom - 1].category = mujoco.mjtCatBit.mjCAT_DECOR
 
-  vx, vy, vtheta = cmd
+    vx, vy, vtheta = cmd
 
-  angle = theta + vtheta
-  rotation_matrix = np.array(
-      [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
-  )
+    angle = theta + vtheta
+    rotation_matrix = np.array(
+        [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]]
+    )
 
-  arrow_from = xyz
-  rotated_velocity = rotation_matrix @ np.array([vx, vy])
-  to = np.asarray([rotated_velocity[0], rotated_velocity[1], 0])
-  to = to / (np.linalg.norm(to) + 1e-6)
-  arrow_to = arrow_from + to * scl
+    arrow_from = xyz
+    rotated_velocity = rotation_matrix @ np.array([vx, vy])
+    to = np.asarray([rotated_velocity[0], rotated_velocity[1], 0])
+    to = to / (np.linalg.norm(to) + 1e-6)
+    arrow_to = arrow_from + to * scl
 
-  mujoco.mjv_initGeom(
-      geom=scn.geoms[scn.ngeom - 1],
-      type=mujoco.mjtGeom.mjGEOM_ARROW.value,
-      size=np.zeros(3),
-      pos=np.zeros(3),
-      mat=np.zeros(9),
-      rgba=np.asarray(rgba).astype(np.float32),
-  )
-  mujoco.mjv_connector(
-      geom=scn.geoms[scn.ngeom - 1],
-      type=mujoco.mjtGeom.mjGEOM_ARROW.value,
-      width=radius,
-      from_=arrow_from,
-      to=arrow_to,
-  )
+    mujoco.mjv_initGeom(
+        geom=scn.geoms[scn.ngeom - 1],
+        type=mujoco.mjtGeom.mjGEOM_ARROW.value,
+        size=np.zeros(3),
+        pos=np.zeros(3),
+        mat=np.zeros(9),
+        rgba=np.asarray(rgba).astype(np.float32),
+    )
+    mujoco.mjv_connector(
+        geom=scn.geoms[scn.ngeom - 1],
+        type=mujoco.mjtGeom.mjGEOM_ARROW.value,
+        width=radius,
+        from_=arrow_from,
+        to=arrow_to,
+    )

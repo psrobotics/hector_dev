@@ -3,9 +3,10 @@ import mujoco
 import mujoco.viewer
 import time
 
+
 def visualize_home_pose(mjcf_path, key_name="home"):
     """
-    Loads an MJCF model, visualizes its home pose (qpos0), 
+    Loads an MJCF model, visualizes its home pose (qpos0),
     and freezes at that frame.
 
     """
@@ -26,9 +27,9 @@ def visualize_home_pose(mjcf_path, key_name="home"):
             while viewer.is_running():
                 time.sleep(0.1)
 
-
     except Exception as e:
         print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
 

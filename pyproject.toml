@@ -15,6 +15,9 @@ include-package-data = true
 where = ["src"]
 include = ["hector_pg*", "bai_pg*"]
 
+[tool.black]
+target-version = ['py311']
+
 # include your XML/assets in the wheel
 [tool.setuptools.package-data]
 hector_pg = ["xmls/*.xml", "xmls/**/*.xml", "assets/**/*"]

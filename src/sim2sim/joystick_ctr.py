@@ -9,11 +9,12 @@ import threading
 
 lc = lcm.LCM()
 
-vel_global = np.array((0.0, 0.0, 0.0)) 
+vel_global = np.array((0.0, 0.0, 0.0))
 lock = threading.Lock()
 
+
 def send_data():
-    interval = 1 / 22 # 22hz
+    interval = 1 / 22  # 22hz
     x_v = 0
     y_v = 0
     ang_v = 0
@@ -22,16 +23,17 @@ def send_data():
             x_v = vel_global[0]
             y_v = vel_global[1]
             ang_v = vel_global[2]
-        
+
         # Send lcm twist command
         msg = twist_t()
         msg.x_vel[0] = x_v
         msg.y_vel[0] = y_v
         msg.omega_vel[0] = ang_v
         lc.publish("TWIST_T", msg.encode())
-        print('lcm sent\n')
+        print("lcm sent\n")
 
         time.sleep(interval)
+
 
 thread = threading.Thread(target=send_data, daemon=True)
 thread.start()
@@ -92,12 +94,12 @@ while running:
     dpad = joystick.get_hat(0)  # D-pad direction
 
     # rumble the controller
-    strength_ctr_all = (abs(left_stick_x)+abs(left_stick_y)+abs(right_stick_x))/3
-    #joystick.rumble(0.0, 0.5*strength_ctr_all, 0) # low freq motor, high freq motor, time
+    strength_ctr_all = (abs(left_stick_x) + abs(left_stick_y) + abs(right_stick_x)) / 3
+    # joystick.rumble(0.0, 0.5*strength_ctr_all, 0) # low freq motor, high freq motor, time
 
-    y_velocity = -1*left_stick_y*linear_vv
-    x_velocity = -1*left_stick_x*linear_vv
-    angular_velocity = -1*right_stick_x*angular_vv
+    y_velocity = -1 * left_stick_y * linear_vv
+    x_velocity = -1 * left_stick_x * linear_vv
+    angular_velocity = -1 * right_stick_x * angular_vv
 
     with lock:  # Ensure thread-safe read
         vel_global[0] = y_velocity
@@ -108,14 +110,20 @@ while running:
     screen.fill(white)
 
     # Calculate bar heights
-    x_bar_height = int(abs(left_stick_y) * 200)  
+    x_bar_height = int(abs(left_stick_y) * 200)
     y_bar_height = int(abs(left_stick_x) * 200)
     angular_bar_height = int(abs(right_stick_x) * 200)
 
     # Draw the bars
-    pygame.draw.rect(screen, black, (50, base_y - x_bar_height, bar_width, x_bar_height))
-    pygame.draw.rect(screen, black, (150, base_y - y_bar_height, bar_width, y_bar_height))
-    pygame.draw.rect(screen, black, (250, base_y - angular_bar_height, bar_width, angular_bar_height))
+    pygame.draw.rect(
+        screen, black, (50, base_y - x_bar_height, bar_width, x_bar_height)
+    )
+    pygame.draw.rect(
+        screen, black, (150, base_y - y_bar_height, bar_width, y_bar_height)
+    )
+    pygame.draw.rect(
+        screen, black, (250, base_y - angular_bar_height, bar_width, angular_bar_height)
+    )
 
     # Add labels
     font = pygame.font.Font(None, 24)
@@ -130,7 +138,9 @@ while running:
     # Update the display
     pygame.display.flip()
 
-    print(f"X v: {x_velocity:.2f}, Y v: {y_velocity:.2f}, Angular v: {angular_velocity:.2f}")
+    print(
+        f"X v: {x_velocity:.2f}, Y v: {y_velocity:.2f}, Angular v: {angular_velocity:.2f}"
+    )
 
     clock.tick(30)
 
