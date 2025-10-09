@@ -150,7 +150,6 @@ def brax_ppo_config(env_name: str) -> config_dict.ConfigDict:
     elif env_name in (
         "HectorWBCFlatTerrain",
         "HectorJoystickFlatTerrain",
-        "HectorJoystickFlatTerrainIlab",
         "HectorJoystickFlatTerrainBarrier",
     ):
         rl_config.num_timesteps = 200_000_000
